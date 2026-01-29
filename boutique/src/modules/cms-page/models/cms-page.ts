@@ -11,6 +11,7 @@ const CmsPage = model.define("cms_page", {
   seo_og_image_url: model.text().nullable(),
   content: model.json().default({}),
   preview_token: model.text().nullable(),
+  is_system: model.boolean().default(false),
 })
 
 export default CmsPage

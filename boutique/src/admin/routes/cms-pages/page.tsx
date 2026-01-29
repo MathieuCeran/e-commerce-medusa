@@ -12,6 +12,15 @@ type CmsPage = {
   title: string
   status: "draft" | "published"
   updated_at: string
+  is_system: boolean
+}
+
+// Helper to display the public URL for a page
+const getDisplayUrl = (page: CmsPage) => {
+  if (page.slug === "/" || page.is_system) {
+    return "/" // Homepage
+  }
+  return `/page/${page.slug}`
 }
 
 const CmsPagesList = () => {
@@ -138,7 +147,14 @@ const CmsPagesList = () => {
         </div>
       ) : (
         <div className="divide-y">
-          {pages.map((page) => (
+          {/* Sort pages: homepage first, then by title */}
+          {[...pages]
+            .sort((a, b) => {
+              if (a.is_system && !b.is_system) return -1
+              if (!a.is_system && b.is_system) return 1
+              return a.title.localeCompare(b.title)
+            })
+            .map((page) => (
             <div
               key={page.id}
               className="flex items-center justify-between px-6 py-3 hover:bg-ui-bg-base-hover cursor-pointer"
@@ -147,9 +163,12 @@ const CmsPagesList = () => {
               <div>
                 <Text size="small" weight="plus">
                   {page.title}
+                  {page.is_system && (
+                    <span className="ml-2 text-xs text-ui-fg-muted">(Homepage)</span>
+                  )}
                 </Text>
                 <Text size="small" className="text-ui-fg-subtle">
-                  /p/{page.slug}
+                  {getDisplayUrl(page)}
                 </Text>
               </div>
               <div className="flex items-center gap-3">
@@ -162,18 +181,20 @@ const CmsPagesList = () => {
                 >
                   {page.status}
                 </span>
-                <Button
-                  size="small"
-                  variant="secondary"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (confirm("Delete this page?")) {
-                      deleteMutation.mutate(page.id)
-                    }
-                  }}
-                >
-                  Delete
-                </Button>
+                {!page.is_system && (
+                  <Button
+                    size="small"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm("Delete this page?")) {
+                        deleteMutation.mutate(page.id)
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                )}
               </div>
             </div>
           ))}

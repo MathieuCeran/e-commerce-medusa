@@ -143,7 +143,7 @@ const CmsPageEditor = () => {
           </button>
           <Text size="small" weight="plus">{page.title}</Text>
           <Text size="small" className="text-ui-fg-muted" style={{ fontFamily: "monospace" }}>
-            /p/{page.slug}
+            {page.slug === "/" ? "/" : `/page/${page.slug}`}
           </Text>
           <span
             style={{
@@ -172,7 +172,7 @@ const CmsPageEditor = () => {
 
           {page.preview_token && (
             <a
-              href={`${storeFrontUrl}/p/${page.slug}/preview?token=${page.preview_token}`}
+              href={`${storeFrontUrl}${page.slug === "/" ? "" : `/page/${page.slug}`}/preview?token=${page.preview_token}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ textDecoration: "none" }}

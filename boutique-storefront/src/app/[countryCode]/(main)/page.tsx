@@ -5,7 +5,7 @@ import { listCollections, getCollectionByHandle } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { listProducts } from "@lib/data/products"
 import { getCmsPage } from "@lib/data/cms-pages"
-import { PuckRenderer } from "./p/[slug]/puck-renderer"
+import { PuckRenderer } from "./page/[slug]/puck-renderer"
 import { HttpTypes } from "@medusajs/types"
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const homePage = await getCmsPage("home")
+  const homePage = await getCmsPage("/")
 
   if (homePage) {
     return {
@@ -102,8 +102,8 @@ export default async function Home(props: Props) {
 
   const region = await getRegion(countryCode)
 
-  // Check for CMS homepage first
-  const homePage = await getCmsPage("home")
+  // Check for CMS homepage first (slug = "/")
+  const homePage = await getCmsPage("/")
 
   if (homePage && region) {
     const enrichedContent = await injectProductsData(

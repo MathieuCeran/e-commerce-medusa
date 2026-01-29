@@ -7,8 +7,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const cmsPageService: CmsPageModuleService =
     req.scope.resolve(CMS_PAGE_MODULE)
 
+  // Decode the slug (handles URL-encoded "/" for homepage)
+  const slug = decodeURIComponent(req.params.slug)
+
   const filters: Record<string, unknown> = {
-    slug: req.params.slug,
+    slug,
     status: "published",
   }
 

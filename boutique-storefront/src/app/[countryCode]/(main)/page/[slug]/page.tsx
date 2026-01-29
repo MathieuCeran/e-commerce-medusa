@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import { getCmsPage } from "@lib/data/cms-pages"
 import { getRegion } from "@lib/data/regions"
 import { getCollectionByHandle } from "@lib/data/collections"
@@ -12,12 +12,7 @@ type Props = {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug, countryCode } = await params
-
-  // Redirect home slug to homepage to avoid duplicate content
-  if (slug === "home") {
-    return {}
-  }
+  const { slug } = await params
 
   const page = await getCmsPage(slug)
 
@@ -96,6 +91,7 @@ async function injectProductsData(
 
 export default async function CmsPageRoute({ params }: Props) {
   const { slug, countryCode } = await params
+
   const [page, region] = await Promise.all([
     getCmsPage(slug),
     getRegion(countryCode),
