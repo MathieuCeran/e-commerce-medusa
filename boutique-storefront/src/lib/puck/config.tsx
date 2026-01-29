@@ -9,6 +9,7 @@ import { Spacer } from "./components/spacer"
 import { ProductsGrid } from "./components/products-grid"
 import { ImageText } from "./components/image-text"
 import { CardGrid } from "./components/card-grid"
+import { BentoGrid } from "./components/bento-grid"
 
 export const puckConfig: Config = {
   components: {
@@ -22,5 +23,6 @@ export const puckConfig: Config = {
     ProductsGrid,
     ImageText,
     CardGrid,
+    BentoGrid,
   },
 }
