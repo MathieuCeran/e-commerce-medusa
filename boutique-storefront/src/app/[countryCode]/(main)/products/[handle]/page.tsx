@@ -2,6 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { listProducts } from "@lib/data/products"
 import { getRegion, listRegions } from "@lib/data/regions"
+import { getThemeSettings } from "@lib/data/cms-pages"
 import ProductTemplate from "@modules/products/templates"
 import { HttpTypes } from "@medusajs/types"
 
@@ -55,18 +56,20 @@ export async function generateStaticParams() {
 function getImagesForVariant(
   product: HttpTypes.StoreProduct,
   selectedVariantId?: string
-) {
+): HttpTypes.StoreProductImage[] {
+  const productImages = product.images || []
+
   if (!selectedVariantId || !product.variants) {
-    return product.images
+    return productImages
   }
 
-  const variant = product.variants!.find((v) => v.id === selectedVariantId)
-  if (!variant || !variant.images.length) {
-    return product.images
+  const variant = product.variants.find((v) => v.id === selectedVariantId)
+  if (!variant || !variant.images || variant.images.length === 0) {
+    return productImages
   }
 
   const imageIdsMap = new Map(variant.images.map((i) => [i.id, true]))
-  return product.images!.filter((i) => imageIdsMap.has(i.id))
+  return productImages.filter((i) => imageIdsMap.has(i.id))
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -100,8 +103,16 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function ProductPage(props: Props) {
   const params = await props.params
-  const region = await getRegion(params.countryCode)
   const searchParams = await props.searchParams
+
+  const [region, themeSettings, productResponse] = await Promise.all([
+    getRegion(params.countryCode),
+    getThemeSettings(),
+    listProducts({
+      countryCode: params.countryCode,
+      queryParams: { handle: params.handle },
+    }),
+  ])
 
   const selectedVariantId = searchParams.v_id
 
@@ -109,16 +120,14 @@ export default async function ProductPage(props: Props) {
     notFound()
   }
 
-  const pricedProduct = await listProducts({
-    countryCode: params.countryCode,
-    queryParams: { handle: params.handle },
-  }).then(({ response }) => response.products[0])
-
-  const images = getImagesForVariant(pricedProduct, selectedVariantId)
+  const pricedProduct = productResponse.response.products[0]
 
   if (!pricedProduct) {
     notFound()
   }
+
+  const images = getImagesForVariant(pricedProduct, selectedVariantId)
+  const templateVariant = themeSettings?.product_template_variant || "classique"
 
   return (
     <ProductTemplate
@@ -126,6 +135,7 @@ export default async function ProductPage(props: Props) {
       region={region}
       countryCode={params.countryCode}
       images={images}
+      templateVariant={templateVariant}
     />
   )
 }

@@ -24,6 +24,9 @@ const ThemeSettings = model.define("theme_settings", {
   // Header/Footer
   header_variant: model.text().default("one"),
   footer_variant: model.text().default("one"),
+
+  // Product Page Template
+  product_template_variant: model.text().default("classique"),
   header_bg_color: model.text().default("#ffffff"),
   header_text_color: model.text().default("#111827"),
   footer_bg_color: model.text().default("#111827"),

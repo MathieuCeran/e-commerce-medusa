@@ -152,6 +152,16 @@
           "default": "'one'",
           "mappedType": "text"
         },
+        "product_template_variant": {
+          "name": "product_template_variant",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "default": "'classique'",
+          "mappedType": "text"
+        },
         "header_bg_color": {
           "name": "header_bg_color",
           "type": "text",

@@ -182,6 +182,7 @@ export type ThemeSettings = {
   body_font: string
   header_variant: string
   footer_variant: string
+  product_template_variant: "classique" | "galerie" | "immersif"
   header_bg_color: string
   header_text_color: string
   footer_bg_color: string
@@ -197,7 +198,7 @@ export async function getThemeSettings(): Promise<ThemeSettings | null> {
       headers: {
         "x-publishable-api-key": PUBLISHABLE_KEY,
       },
-      next: { revalidate: 300, tags: ["theme-settings"] },
+      cache: "no-store", // Désactivé temporairement pour voir les changements immédiatement
     })
 
     if (!res.ok) return null

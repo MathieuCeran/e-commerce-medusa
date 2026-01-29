@@ -20,6 +20,7 @@ type ThemeSettings = {
   body_font: string
   header_variant: string
   footer_variant: string
+  product_template_variant: string
   header_bg_color: string
   header_text_color: string
   footer_bg_color: string
@@ -131,6 +132,7 @@ const ThemeSettingsPage = () => {
       body_font: form.body_font,
       header_variant: form.header_variant,
       footer_variant: form.footer_variant,
+      product_template_variant: form.product_template_variant,
       header_bg_color: form.header_bg_color,
       header_text_color: form.header_text_color,
       footer_bg_color: form.footer_bg_color,
@@ -291,6 +293,28 @@ const ThemeSettingsPage = () => {
             value={form.footer_text_color || "#ffffff"}
             onChange={(v) => updateField("footer_text_color", v)}
           />
+        </div>
+      </div>
+
+      {/* Product Page Template */}
+      <div className="px-6 py-6">
+        <Text size="base" weight="plus" className="mb-4">
+          Page Produit
+        </Text>
+        <div className="grid grid-cols-1 gap-4">
+          <VariantSelect
+            label="Template de page produit"
+            value={form.product_template_variant || "classique"}
+            onChange={(v) => updateField("product_template_variant", v)}
+            options={[
+              { label: "Classique (Image gauche, infos droite)", value: "classique" },
+              { label: "Galerie (Grande galerie, infos en dessous)", value: "galerie" },
+              { label: "Immersif (Pleine largeur, design moderne)", value: "immersif" },
+            ]}
+          />
+          <Text size="small" className="text-ui-fg-muted">
+            Choisissez le design de vos pages produit. Chaque template offre une mise en page différente pour mettre en valeur vos produits.
+          </Text>
         </div>
       </div>
 

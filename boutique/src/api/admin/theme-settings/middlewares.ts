@@ -20,6 +20,7 @@ export const UpdateThemeSettingsSchema = z.object({
   body_font: z.string().max(100).optional(),
   header_variant: z.string().max(100).optional(),
   footer_variant: z.string().max(100).optional(),
+  product_template_variant: z.enum(["classique", "galerie", "immersif"]).optional(),
   header_bg_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   header_text_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   footer_bg_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),

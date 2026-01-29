@@ -12,7 +12,8 @@
       "Bash(dir:*)",
       "mcp__plugin_medusa-dev_MedusaDocs__ask_medusa_question",
       "Bash(npm ls:*)",
-      "Bash(npx medusa:*)"
+      "Bash(npx medusa:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

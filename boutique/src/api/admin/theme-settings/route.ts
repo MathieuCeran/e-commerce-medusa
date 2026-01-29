@@ -20,6 +20,7 @@ type ThemeSettingsBody = {
   body_font?: string
   header_variant?: string
   footer_variant?: string
+  product_template_variant?: string
   header_bg_color?: string
   header_text_color?: string
   footer_bg_color?: string
@@ -94,6 +95,7 @@ export const POST = async (
     body_font: body.body_font,
     header_variant: body.header_variant,
     footer_variant: body.footer_variant,
+    product_template_variant: body.product_template_variant,
     header_bg_color: body.header_bg_color,
     header_text_color: body.header_text_color,
     footer_bg_color: body.footer_bg_color,
