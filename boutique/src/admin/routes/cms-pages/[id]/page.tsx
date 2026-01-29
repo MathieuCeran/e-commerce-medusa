@@ -111,7 +111,17 @@ const CmsPageEditor = () => {
     : "http://localhost:8000"
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 57px)" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000, // Ensure it overlays the Medusa Admin sidebar and header
+        background: "var(--bg-base, #fff)",
+      }}
+    >
       {/* Toolbar */}
       <div
         style={{
@@ -197,7 +207,7 @@ const CmsPageEditor = () => {
       </div>
 
       {/* Puck Editor */}
-      <div style={{ flex: 1, overflow: "hidden" }}>
+      <div style={{ flex: 1, overflowY: "auto" }}>
         <Puck config={puckConfig} data={puckData} onPublish={handleSave} />
       </div>
     </div>

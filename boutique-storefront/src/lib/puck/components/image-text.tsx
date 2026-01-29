@@ -1,6 +1,7 @@
 import type { ComponentConfig } from "@puckeditor/core"
 import { Button } from "@medusajs/ui"
 import InteractiveLink from "@modules/common/components/interactive-link"
+import { AnimationWrapper } from "@modules/common/components/animation-wrapper"
 
 export type ImageTextProps = {
   title: string
@@ -15,6 +16,7 @@ export type ImageTextProps = {
   titleColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const ImageText: ComponentConfig<ImageTextProps> = {
@@ -39,6 +41,17 @@ export const ImageText: ComponentConfig<ImageTextProps> = {
     titleColor: { type: "text", label: "Title Color (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     title: "Your Title Here",
@@ -53,6 +66,7 @@ export const ImageText: ComponentConfig<ImageTextProps> = {
     titleColor: "",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     title,
@@ -67,54 +81,57 @@ export const ImageText: ComponentConfig<ImageTextProps> = {
     titleColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     const isImageRight = layout === "image-right"
 
     return (
-      <section
-        style={{ 
-          backgroundColor: backgroundColor || undefined, 
-          paddingTop, 
-          paddingBottom 
-        }}
-        className="px-6 md:px-12"
-      >
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div className={isImageRight ? "order-last" : "order-first"}>
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={imageAlt}
-                className="w-full h-auto rounded-lg shadow-md object-cover"
-              />
-            ) : (
-              <div className="w-full h-64 bg-gray-200 flex items-center justify-center rounded-lg text-gray-400">
-                No Image
-              </div>
-            )}
+      <AnimationWrapper animation={animation}>
+        <section
+          style={{ 
+            backgroundColor: backgroundColor || undefined, 
+            paddingTop, 
+            paddingBottom 
+          }}
+          className="px-6 md:px-12"
+        >
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className={isImageRight ? "order-last" : "order-first"}>
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={imageAlt}
+                  className="w-full h-auto rounded-lg shadow-md object-cover"
+                />
+              ) : (
+                <div className="w-full h-64 bg-gray-200 flex items-center justify-center rounded-lg text-gray-400">
+                  No Image
+                </div>
+              )}
+            </div>
+            
+            <div className="flex flex-col items-start gap-6 min-w-0">
+              <h2 
+                className="text-3xl font-bold theme-heading"
+                style={{ color: titleColor || undefined }}
+              >
+                {title}
+              </h2>
+              <p 
+                className="text-lg theme-text whitespace-pre-wrap break-all"
+                style={{ color: textColor || undefined }}
+              >
+                {description}
+              </p>
+              {ctaText && ctaLink && (
+                <Button asChild variant="secondary">
+                  <a href={ctaLink}>{ctaText}</a>
+                </Button>
+              )}
+            </div>
           </div>
-          
-          <div className="flex flex-col items-start gap-6 min-w-0">
-            <h2 
-              className="text-3xl font-bold theme-heading"
-              style={{ color: titleColor || undefined }}
-            >
-              {title}
-            </h2>
-            <p 
-              className="text-lg theme-text whitespace-pre-wrap break-all"
-              style={{ color: textColor || undefined }}
-            >
-              {description}
-            </p>
-            {ctaText && ctaLink && (
-              <Button asChild variant="secondary">
-                <a href={ctaLink}>{ctaText}</a>
-              </Button>
-            )}
-          </div>
-        </div>
-      </section>
+        </section>
+      </AnimationWrapper>
     )
   },
 }

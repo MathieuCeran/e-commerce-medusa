@@ -17,6 +17,7 @@ export type FeaturesProps = {
   iconSize: "small" | "medium" | "large"
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const Features: ComponentConfig<FeaturesProps> = {
@@ -61,6 +62,17 @@ export const Features: ComponentConfig<FeaturesProps> = {
     textColor: { type: "text", label: "Text Color (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Why Choose Us",
@@ -77,6 +89,7 @@ export const Features: ComponentConfig<FeaturesProps> = {
     textColor: "#6b7280",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     heading,
@@ -89,6 +102,7 @@ export const Features: ComponentConfig<FeaturesProps> = {
     textColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     const colCount = parseInt(columns)
     const iconSizeMap = { small: 32, medium: 48, large: 64 }

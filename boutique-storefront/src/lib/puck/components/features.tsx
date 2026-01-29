@@ -1,9 +1,11 @@
 import type { ComponentConfig } from "@puckeditor/core"
+import { AnimationWrapper } from "@modules/common/components/animation-wrapper"
 
 type FeatureItem = {
   icon: string
   title: string
   description: string
+  animation?: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export type FeaturesProps = {
@@ -17,6 +19,7 @@ export type FeaturesProps = {
   iconSize: "small" | "medium" | "large"
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const Features: ComponentConfig<FeaturesProps> = {
@@ -49,11 +52,23 @@ export const Features: ComponentConfig<FeaturesProps> = {
         icon: { type: "text", label: "Emoji / Icon" },
         title: { type: "text", label: "Title" },
         description: { type: "textarea", label: "Description" },
+        animation: {
+          type: "select",
+          label: "Animation",
+          options: [
+            { label: "None", value: "none" },
+            { label: "Fade In", value: "fade" },
+            { label: "Slide Up", value: "slide-up" },
+            { label: "Slide Left", value: "slide-left" },
+            { label: "Slide Right", value: "slide-right" },
+          ],
+        },
       },
       defaultItemProps: {
         icon: "✨",
         title: "Feature",
         description: "Description of this feature",
+        animation: "none",
       },
     },
     backgroundColor: { type: "text", label: "Background Color (hex)" },
@@ -61,6 +76,17 @@ export const Features: ComponentConfig<FeaturesProps> = {
     textColor: { type: "text", label: "Text Color (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Why Choose Us",
@@ -77,6 +103,7 @@ export const Features: ComponentConfig<FeaturesProps> = {
     textColor: "#6b7280",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     heading,
@@ -89,6 +116,7 @@ export const Features: ComponentConfig<FeaturesProps> = {
     textColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     const gridClasses = {
       "2": "grid-cols-1 md:grid-cols-2",
@@ -103,53 +131,61 @@ export const Features: ComponentConfig<FeaturesProps> = {
     }
 
     return (
-      <section
-        className="px-6 md:px-12"
-        style={{ backgroundColor, paddingTop, paddingBottom }}
-      >
-        <div className="max-w-7xl mx-auto">
-          {(heading || subheading) && (
-            <div className="text-center mb-12">
-              {heading && (
-                <h2
-                  className="text-2xl md:text-3xl font-bold"
-                  style={{ color: headingColor }}
-                >
-                  {heading}
-                </h2>
-              )}
-              {subheading && (
-                <p className="mt-3 text-lg" style={{ color: textColor }}>
-                  {subheading}
-                </p>
-              )}
-            </div>
-          )}
-          <div className={`grid ${gridClasses[columns]} gap-8`}>
-            {items.map((item, i) => (
-              <div key={i} className="text-center p-4">
-                {item.icon && (
-                  <span className={`${iconSizeClasses[iconSize]} block mb-4`}>
-                    {item.icon}
-                  </span>
+      <AnimationWrapper animation={animation}>
+        <section
+          className="px-6 md:px-12"
+          style={{ backgroundColor, paddingTop, paddingBottom }}
+        >
+          <div className="max-w-7xl mx-auto">
+            {(heading || subheading) && (
+              <div className="text-center mb-12">
+                {heading && (
+                  <h2
+                    className="text-2xl md:text-3xl font-bold"
+                    style={{ color: headingColor }}
+                  >
+                    {heading}
+                  </h2>
                 )}
-                <h3
-                  className="text-lg font-semibold mb-2"
-                  style={{ color: headingColor }}
-                >
-                  {item.title}
-                </h3>
-                <p
-                  className="text-sm leading-relaxed"
-                  style={{ color: textColor }}
-                >
-                  {item.description}
-                </p>
+                {subheading && (
+                  <p className="mt-3 text-lg" style={{ color: textColor }}>
+                    {subheading}
+                  </p>
+                )}
               </div>
-            ))}
+            )}
+            <div className={`grid ${gridClasses[columns]} gap-8`}>
+              {items.map((item, i) => (
+                <AnimationWrapper 
+                  key={i} 
+                  animation={item.animation || "none"}
+                  delay={i * 0.1}
+                >
+                  <div className="text-center p-4">
+                    {item.icon && (
+                      <span className={`${iconSizeClasses[iconSize]} block mb-4`}>
+                        {item.icon}
+                      </span>
+                    )}
+                    <h3
+                      className="text-lg font-semibold mb-2"
+                      style={{ color: headingColor }}
+                    >
+                      {item.title}
+                    </h3>
+                    <p
+                      className="text-sm leading-relaxed"
+                      style={{ color: textColor }}
+                    >
+                      {item.description}
+                    </p>
+                  </div>
+                </AnimationWrapper>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </AnimationWrapper>
     )
   },
 }

@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "@puckeditor/core"
+import { AnimationWrapper } from "@modules/common/components/animation-wrapper"
 
 export type HeroProps = {
   title: string
@@ -16,6 +17,7 @@ export type HeroProps = {
   titleColor: string
   subtitleColor: string
   titleSize: "medium" | "large" | "xlarge"
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const Hero: ComponentConfig<HeroProps> = {
@@ -66,6 +68,17 @@ export const Hero: ComponentConfig<HeroProps> = {
       min: 0,
       max: 100,
     },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     title: "Welcome to Our Store",
@@ -83,6 +96,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     subtitleColor: "#ffffff",
     overlayColor: "#000000",
     overlayOpacity: 40,
+    animation: "none",
   },
   render: ({
     title,
@@ -100,6 +114,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     subtitleColor,
     overlayColor,
     overlayOpacity,
+    animation,
   }) => {
     const heightClasses = {
       small: "min-h-[300px]",
@@ -128,58 +143,60 @@ export const Hero: ComponentConfig<HeroProps> = {
     }
 
     return (
-      <section
-        className={`relative w-full ${heightClasses[height]} flex`}
-        style={{ background: imageUrl ? undefined : "#1f2937" }}
-      >
-        {imageUrl && (
-          <img
-            src={imageUrl}
-            alt={imageAlt}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        )}
-        <div
-          className="absolute inset-0"
-          style={{ background: hexToRgba(overlayColor || "#000000", overlayOpacity) }}
-        />
-        <div
-          className={`relative z-10 flex flex-col justify-center w-full px-6 md:px-12 py-16 max-w-7xl mx-auto ${alignClasses[alignment]}`}
+      <AnimationWrapper animation={animation}>
+        <section
+          className={`relative w-full ${heightClasses[height]} flex`}
+          style={{ background: imageUrl ? undefined : "#1f2937" }}
         >
-          <h1
-            className={`${titleSizeClasses[titleSize]} font-bold max-w-4xl leading-tight`}
-            style={{ color: titleColor }}
-          >
-            {title}
-          </h1>
-          {subtitle && (
-            <p
-              className="mt-5 text-lg md:text-xl max-w-2xl leading-relaxed opacity-90"
-              style={{ color: subtitleColor }}
-            >
-              {subtitle}
-            </p>
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt={imageAlt}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
           )}
-          <div className="flex gap-4 mt-8 flex-wrap">
-            {ctaLabel && ctaHref && (
-              <a
-                href={ctaHref}
-                className="inline-block px-8 py-3.5 bg-white text-black font-semibold rounded hover:bg-gray-100 transition-colors"
+          <div
+            className="absolute inset-0"
+            style={{ background: hexToRgba(overlayColor || "#000000", overlayOpacity) }}
+          />
+          <div
+            className={`relative z-10 flex flex-col justify-center w-full px-6 md:px-12 py-16 max-w-7xl mx-auto ${alignClasses[alignment]}`}
+          >
+            <h1
+              className={`${titleSizeClasses[titleSize]} font-bold max-w-4xl leading-tight`}
+              style={{ color: titleColor }}
+            >
+              {title}
+            </h1>
+            {subtitle && (
+              <p
+                className="mt-5 text-lg md:text-xl max-w-2xl leading-relaxed opacity-90"
+                style={{ color: subtitleColor }}
               >
-                {ctaLabel}
-              </a>
+                {subtitle}
+              </p>
             )}
-            {ctaLabel2 && ctaHref2 && (
-              <a
-                href={ctaHref2}
-                className="inline-block px-8 py-3.5 bg-transparent text-white font-semibold rounded border-2 border-white hover:bg-white/10 transition-colors"
-              >
-                {ctaLabel2}
-              </a>
-            )}
+            <div className="flex gap-4 mt-8 flex-wrap">
+              {ctaLabel && ctaHref && (
+                <a
+                  href={ctaHref}
+                  className="inline-block px-8 py-3.5 bg-white text-black font-semibold rounded hover:bg-gray-100 transition-colors"
+                >
+                  {ctaLabel}
+                </a>
+              )}
+              {ctaLabel2 && ctaHref2 && (
+                <a
+                  href={ctaHref2}
+                  className="inline-block px-8 py-3.5 bg-transparent text-white font-semibold rounded border-2 border-white hover:bg-white/10 transition-colors"
+                >
+                  {ctaLabel2}
+                </a>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </AnimationWrapper>
     )
   },
 }

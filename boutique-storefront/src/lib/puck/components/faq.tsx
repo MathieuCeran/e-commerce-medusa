@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "@puckeditor/core"
+import { AnimationWrapper } from "@modules/common/components/animation-wrapper"
 
 type FaqItem = {
   question: string
@@ -15,6 +16,7 @@ export type FAQProps = {
   textColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const FAQ: ComponentConfig<FAQProps> = {
@@ -48,6 +50,17 @@ export const FAQ: ComponentConfig<FAQProps> = {
     textColor: { type: "text", label: "Text Color (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Frequently Asked Questions",
@@ -63,6 +76,7 @@ export const FAQ: ComponentConfig<FAQProps> = {
     textColor: "#4b5563",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     heading,
@@ -74,6 +88,7 @@ export const FAQ: ComponentConfig<FAQProps> = {
     textColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     const widthClasses = {
       narrow: "max-w-xl",
@@ -82,51 +97,53 @@ export const FAQ: ComponentConfig<FAQProps> = {
     }
 
     return (
-      <section
-        className="px-6"
-        style={{ backgroundColor, paddingTop, paddingBottom }}
-      >
-        <div className={`${widthClasses[width]} mx-auto`}>
-          {(heading || subheading) && (
-            <div className="text-center mb-10">
-              {heading && (
-                <h2
-                  className="text-2xl md:text-3xl font-bold"
-                  style={{ color: headingColor }}
-                >
-                  {heading}
-                </h2>
-              )}
-              {subheading && (
-                <p className="mt-3 text-lg" style={{ color: textColor }}>
-                  {subheading}
-                </p>
-              )}
+      <AnimationWrapper animation={animation}>
+        <section
+          className="px-6"
+          style={{ backgroundColor, paddingTop, paddingBottom }}
+        >
+          <div className={`${widthClasses[width]} mx-auto`}>
+            {(heading || subheading) && (
+              <div className="text-center mb-10">
+                {heading && (
+                  <h2
+                    className="text-2xl md:text-3xl font-bold"
+                    style={{ color: headingColor }}
+                  >
+                    {heading}
+                  </h2>
+                )}
+                {subheading && (
+                  <p className="mt-3 text-lg" style={{ color: textColor }}>
+                    {subheading}
+                  </p>
+                )}
+              </div>
+            )}
+            <div className="divide-y divide-gray-200 border-t border-gray-200">
+              {items.map((item, i) => (
+                <details key={i} className="group py-5">
+                  <summary
+                    className="flex justify-between items-center cursor-pointer list-none font-semibold hover:opacity-80"
+                    style={{ color: headingColor }}
+                  >
+                    {item.question}
+                    <span className="text-gray-400 group-open:rotate-45 transition-transform text-xl">
+                      +
+                    </span>
+                  </summary>
+                  <p
+                    className="mt-4 leading-relaxed"
+                    style={{ color: textColor }}
+                  >
+                    {item.answer}
+                  </p>
+                </details>
+              ))}
             </div>
-          )}
-          <div className="divide-y divide-gray-200 border-t border-gray-200">
-            {items.map((item, i) => (
-              <details key={i} className="group py-5">
-                <summary
-                  className="flex justify-between items-center cursor-pointer list-none font-semibold hover:opacity-80"
-                  style={{ color: headingColor }}
-                >
-                  {item.question}
-                  <span className="text-gray-400 group-open:rotate-45 transition-transform text-xl">
-                    +
-                  </span>
-                </summary>
-                <p
-                  className="mt-4 leading-relaxed"
-                  style={{ color: textColor }}
-                >
-                  {item.answer}
-                </p>
-              </details>
-            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      </AnimationWrapper>
     )
   },
 }

@@ -14,6 +14,7 @@ export type CTAProps = {
   buttonTextColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const CTA: ComponentConfig<CTAProps> = {
@@ -39,6 +40,17 @@ export const CTA: ComponentConfig<CTAProps> = {
     buttonTextColor: { type: "text", label: "Button Text (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     title: "Ready to get started?",
@@ -54,6 +66,7 @@ export const CTA: ComponentConfig<CTAProps> = {
     buttonTextColor: "#111827",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     title,
@@ -69,6 +82,7 @@ export const CTA: ComponentConfig<CTAProps> = {
     buttonTextColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     return (
       <section

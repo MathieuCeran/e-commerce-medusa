@@ -2,6 +2,7 @@ import type { ComponentConfig } from "@puckeditor/core"
 import { HttpTypes } from "@medusajs/types"
 import ProductPreview from "@modules/products/components/product-preview"
 import InteractiveLink from "@modules/common/components/interactive-link"
+import { AnimationWrapper } from "@modules/common/components/animation-wrapper"
 
 export type ProductsGridProps = {
   heading: string
@@ -14,6 +15,7 @@ export type ProductsGridProps = {
   headingColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
   // Injected at render time
   _products?: HttpTypes.StoreProduct[]
   _region?: HttpTypes.StoreRegion
@@ -47,6 +49,17 @@ export const ProductsGrid: ComponentConfig<ProductsGridProps> = {
     headingColor: { type: "text", label: "Heading Color (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Featured Products",
@@ -59,6 +72,7 @@ export const ProductsGrid: ComponentConfig<ProductsGridProps> = {
     headingColor: "#111827",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     heading,
@@ -70,6 +84,7 @@ export const ProductsGrid: ComponentConfig<ProductsGridProps> = {
     headingColor,
     paddingTop,
     paddingBottom,
+    animation,
     _products,
     _region,
   }) => {
@@ -96,49 +111,58 @@ export const ProductsGrid: ComponentConfig<ProductsGridProps> = {
     }
 
     return (
-      <section
-        className="px-6 md:px-12"
-        style={{ backgroundColor, paddingTop, paddingBottom }}
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              {heading && (
-                <h2
-                  className="text-2xl md:text-3xl font-bold"
-                  style={{ color: headingColor }}
-                >
-                  {heading}
-                </h2>
-              )}
-              {subheading && (
-                <p className="mt-2 text-gray-600">{subheading}</p>
+      <AnimationWrapper animation={animation}>
+        <section
+          className="px-6 md:px-12"
+          style={{ backgroundColor, paddingTop, paddingBottom }}
+        >
+          <div className="max-w-7xl mx-auto">
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                {heading && (
+                  <h2
+                    className="text-2xl md:text-3xl font-bold"
+                    style={{ color: headingColor }}
+                  >
+                    {heading}
+                  </h2>
+                )}
+                {subheading && (
+                  <p className="mt-2 text-gray-600">{subheading}</p>
+                )}
+              </div>
+              {showViewAll && collectionHandle && (
+                <InteractiveLink href={`/collections/${collectionHandle}`}>
+                  View all
+                </InteractiveLink>
               )}
             </div>
-            {showViewAll && collectionHandle && (
-              <InteractiveLink href={`/collections/${collectionHandle}`}>
-                View all
-              </InteractiveLink>
+
+            {products.length > 0 ? (
+              <ul className={`grid ${gridClasses[columns]} gap-x-6 gap-y-12`}>
+                {products.map((product, i) => (
+                  <AnimationWrapper 
+                    key={product.id}
+                    animation={animation !== "none" ? "fade" : "none"}
+                    delay={i * 0.05}
+                    className="h-full"
+                  >
+                    <li>
+                      <ProductPreview product={product} region={region} isFeatured />
+                    </li>
+                  </AnimationWrapper>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                {collectionHandle
+                  ? `No products found in collection "${collectionHandle}"`
+                  : "Select a collection to display products"}
+              </div>
             )}
           </div>
-
-          {products.length > 0 ? (
-            <ul className={`grid ${gridClasses[columns]} gap-x-6 gap-y-12`}>
-              {products.map((product) => (
-                <li key={product.id}>
-                  <ProductPreview product={product} region={region} isFeatured />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              {collectionHandle
-                ? `No products found in collection "${collectionHandle}"`
-                : "Select a collection to display products"}
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
+      </AnimationWrapper>
     )
   },
 }

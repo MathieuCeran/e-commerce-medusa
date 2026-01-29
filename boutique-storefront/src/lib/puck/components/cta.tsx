@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "@puckeditor/core"
+import { AnimationWrapper } from "@modules/common/components/animation-wrapper"
 
 export type CTAProps = {
   title: string
@@ -14,6 +15,7 @@ export type CTAProps = {
   buttonTextColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const CTA: ComponentConfig<CTAProps> = {
@@ -39,6 +41,17 @@ export const CTA: ComponentConfig<CTAProps> = {
     buttonTextColor: { type: "text", label: "Button Text (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     title: "Ready to get started?",
@@ -54,6 +67,7 @@ export const CTA: ComponentConfig<CTAProps> = {
     buttonTextColor: "#111827",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     title,
@@ -69,53 +83,56 @@ export const CTA: ComponentConfig<CTAProps> = {
     buttonTextColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     return (
-      <section
-        className="px-6 md:px-12"
-        style={{ backgroundColor, paddingTop, paddingBottom }}
-      >
-        <div
-          className={`max-w-3xl ${alignment === "center" ? "mx-auto text-center" : "text-left"}`}
+      <AnimationWrapper animation={animation}>
+        <section
+          className="px-6 md:px-12"
+          style={{ backgroundColor, paddingTop, paddingBottom }}
         >
-          <h2
-            className="text-2xl md:text-3xl font-bold"
-            style={{ color: textColor }}
+          <div
+            className={`max-w-3xl ${alignment === "center" ? "mx-auto text-center" : "text-left"}`}
           >
-            {title}
-          </h2>
-          {text && (
-            <p
-              className="mt-4 text-lg opacity-85 leading-relaxed"
+            <h2
+              className="text-2xl md:text-3xl font-bold"
               style={{ color: textColor }}
             >
-              {text}
-            </p>
-          )}
-          <div
-            className={`flex gap-4 mt-7 flex-wrap ${alignment === "center" ? "justify-center" : ""}`}
-          >
-            {buttonLabel && buttonHref && (
-              <a
-                href={buttonHref}
-                className="inline-block px-7 py-3.5 font-semibold rounded transition-colors"
-                style={{ backgroundColor: buttonBgColor, color: buttonTextColor }}
+              {title}
+            </h2>
+            {text && (
+              <p
+                className="mt-4 text-lg opacity-85 leading-relaxed"
+                style={{ color: textColor }}
               >
-                {buttonLabel}
-              </a>
+                {text}
+              </p>
             )}
-            {buttonLabel2 && buttonHref2 && (
-              <a
-                href={buttonHref2}
-                className="inline-block px-7 py-3.5 font-semibold rounded border-2 transition-colors"
-                style={{ color: textColor, borderColor: textColor }}
-              >
-                {buttonLabel2}
-              </a>
-            )}
+            <div
+              className={`flex gap-4 mt-7 flex-wrap ${alignment === "center" ? "justify-center" : ""}`}
+            >
+              {buttonLabel && buttonHref && (
+                <a
+                  href={buttonHref}
+                  className="inline-block px-7 py-3.5 font-semibold rounded transition-colors"
+                  style={{ backgroundColor: buttonBgColor, color: buttonTextColor }}
+                >
+                  {buttonLabel}
+                </a>
+              )}
+              {buttonLabel2 && buttonHref2 && (
+                <a
+                  href={buttonHref2}
+                  className="inline-block px-7 py-3.5 font-semibold rounded border-2 transition-colors"
+                  style={{ color: textColor, borderColor: textColor }}
+                >
+                  {buttonLabel2}
+                </a>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </AnimationWrapper>
     )
   },
 }

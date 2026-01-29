@@ -15,6 +15,7 @@ export type FAQProps = {
   textColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const FAQ: ComponentConfig<FAQProps> = {
@@ -48,6 +49,17 @@ export const FAQ: ComponentConfig<FAQProps> = {
     textColor: { type: "text", label: "Text Color (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Frequently Asked Questions",
@@ -63,6 +75,7 @@ export const FAQ: ComponentConfig<FAQProps> = {
     textColor: "#4b5563",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     heading,
@@ -74,6 +87,7 @@ export const FAQ: ComponentConfig<FAQProps> = {
     textColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     const widthMap = { narrow: 600, medium: 800, wide: 1000 }
 

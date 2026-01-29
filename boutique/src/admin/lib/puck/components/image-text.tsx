@@ -13,6 +13,7 @@ export type ImageTextProps = {
   titleColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const ImageText: ComponentConfig<ImageTextProps> = {
@@ -37,6 +38,17 @@ export const ImageText: ComponentConfig<ImageTextProps> = {
     titleColor: { type: "text", label: "Title Color (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     title: "Your Title Here",
@@ -51,6 +63,7 @@ export const ImageText: ComponentConfig<ImageTextProps> = {
     titleColor: "",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     title,
@@ -63,6 +76,7 @@ export const ImageText: ComponentConfig<ImageTextProps> = {
     titleColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     return (
       <div 

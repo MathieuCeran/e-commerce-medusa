@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "@puckeditor/core"
+import { AnimationWrapper } from "@modules/common/components/animation-wrapper"
 
 export type RichTextProps = {
   heading: string
@@ -11,6 +12,7 @@ export type RichTextProps = {
   headingColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const RichText: ComponentConfig<RichTextProps> = {
@@ -51,6 +53,17 @@ export const RichText: ComponentConfig<RichTextProps> = {
     textColor: { type: "text", label: "Text Color (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     heading: "",
@@ -63,6 +76,7 @@ export const RichText: ComponentConfig<RichTextProps> = {
     textColor: "#374151",
     paddingTop: 48,
     paddingBottom: 48,
+    animation: "none",
   },
   render: ({
     heading,
@@ -75,6 +89,7 @@ export const RichText: ComponentConfig<RichTextProps> = {
     textColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     const widthClasses = {
       narrow: "max-w-xl",
@@ -91,38 +106,40 @@ export const RichText: ComponentConfig<RichTextProps> = {
     }
 
     return (
-      <section
-        className="px-6"
-        style={{
-          backgroundColor: backgroundColor === "transparent" ? undefined : backgroundColor,
-          paddingTop,
-          paddingBottom,
-        }}
-      >
-        <div className={`${widthClasses[width]} mx-auto`} style={{ textAlign: alignment }}>
-          {heading && (
-            <HeadingTag
-              className={`${headingSizeClasses[headingLevel]} font-semibold mb-5`}
-              style={{ color: headingColor }}
-            >
-              {heading}
-            </HeadingTag>
-          )}
-          {body && (
-            <div>
-              {body.split("\n").map((paragraph, i) => (
-                <p
-                  key={i}
-                  className="mb-4 text-base md:text-lg leading-relaxed"
-                  style={{ color: textColor }}
-                >
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      <AnimationWrapper animation={animation}>
+        <section
+          className="px-6"
+          style={{
+            backgroundColor: backgroundColor === "transparent" ? undefined : backgroundColor,
+            paddingTop,
+            paddingBottom,
+          }}
+        >
+          <div className={`${widthClasses[width]} mx-auto`} style={{ textAlign: alignment }}>
+            {heading && (
+              <HeadingTag
+                className={`${headingSizeClasses[headingLevel]} font-semibold mb-5`}
+                style={{ color: headingColor }}
+              >
+                {heading}
+              </HeadingTag>
+            )}
+            {body && (
+              <div>
+                {body.split("\n").map((paragraph, i) => (
+                  <p
+                    key={i}
+                    className="mb-4 text-base md:text-lg leading-relaxed"
+                    style={{ color: textColor }}
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </AnimationWrapper>
     )
   },
 }

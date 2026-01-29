@@ -11,6 +11,7 @@ export type ProductsGridProps = {
   headingColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const ProductsGrid: ComponentConfig<ProductsGridProps> = {
@@ -49,6 +50,17 @@ export const ProductsGrid: ComponentConfig<ProductsGridProps> = {
     headingColor: { type: "text", label: "Heading Color (hex)" },
     paddingTop: { type: "number", label: "Padding Top (px)", min: 0, max: 200 },
     paddingBottom: { type: "number", label: "Padding Bottom (px)", min: 0, max: 200 },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     heading: "Featured Products",
@@ -61,6 +73,7 @@ export const ProductsGrid: ComponentConfig<ProductsGridProps> = {
     headingColor: "#111827",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     heading,
@@ -73,6 +86,7 @@ export const ProductsGrid: ComponentConfig<ProductsGridProps> = {
     headingColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     const gridClasses = {
       "2": "grid-cols-2",

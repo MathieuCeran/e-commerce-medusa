@@ -1,4 +1,5 @@
 import type { ComponentConfig } from "@puckeditor/core"
+import { AnimationWrapper } from "@modules/common/components/animation-wrapper"
 
 export type ImageBlockProps = {
   url: string
@@ -13,6 +14,7 @@ export type ImageBlockProps = {
   paddingLeft: number
   paddingRight: number
   backgroundColor: string
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const ImageBlock: ComponentConfig<ImageBlockProps> = {
@@ -63,6 +65,17 @@ export const ImageBlock: ComponentConfig<ImageBlockProps> = {
     paddingLeft: { type: "number", label: "Padding Left (px)", min: 0, max: 200 },
     paddingRight: { type: "number", label: "Padding Right (px)", min: 0, max: 200 },
     backgroundColor: { type: "text", label: "Background Color (hex)" },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     url: "",
@@ -77,6 +90,7 @@ export const ImageBlock: ComponentConfig<ImageBlockProps> = {
     paddingLeft: 24,
     paddingRight: 24,
     backgroundColor: "transparent",
+    animation: "none",
   },
   render: ({
     url,
@@ -91,6 +105,7 @@ export const ImageBlock: ComponentConfig<ImageBlockProps> = {
     paddingLeft,
     paddingRight,
     backgroundColor,
+    animation,
   }) => {
     const widthClasses = {
       small: "max-w-[400px]",
@@ -121,31 +136,33 @@ export const ImageBlock: ComponentConfig<ImageBlockProps> = {
     }
 
     return (
-      <section
-        style={{
-          backgroundColor: backgroundColor === "transparent" ? undefined : backgroundColor,
-          paddingTop,
-          paddingBottom,
-          paddingLeft,
-          paddingRight,
-        }}
-      >
-        <figure>
-          <img
-            src={url}
-            alt={alt}
-            className={`w-full ${widthClasses[width]} ${alignClasses[alignment]} ${roundedClasses[rounded]} ${shadow ? "shadow-xl" : ""}`}
-          />
-          {caption && (
-            <figcaption
-              className={`mt-3 text-sm text-gray-500 ${widthClasses[width]} ${alignClasses[alignment]}`}
-              style={{ textAlign: alignment }}
-            >
-              {caption}
-            </figcaption>
-          )}
-        </figure>
-      </section>
+      <AnimationWrapper animation={animation}>
+        <section
+          style={{
+            backgroundColor: backgroundColor === "transparent" ? undefined : backgroundColor,
+            paddingTop,
+            paddingBottom,
+            paddingLeft,
+            paddingRight,
+          }}
+        >
+          <figure>
+            <img
+              src={url}
+              alt={alt}
+              className={`w-full ${widthClasses[width]} ${alignClasses[alignment]} ${roundedClasses[rounded]} ${shadow ? "shadow-xl" : ""}`}
+            />
+            {caption && (
+              <figcaption
+                className={`mt-3 text-sm text-gray-500 ${widthClasses[width]} ${alignClasses[alignment]}`}
+                style={{ textAlign: alignment }}
+              >
+                {caption}
+              </figcaption>
+            )}
+          </figure>
+        </section>
+      </AnimationWrapper>
     )
   },
 }

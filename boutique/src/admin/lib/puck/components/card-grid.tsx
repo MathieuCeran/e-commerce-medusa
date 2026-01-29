@@ -7,6 +7,7 @@ export type CardItem = {
   ctaText: string
   ctaLink: string
   backgroundColor: string
+  animation?: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export type CardGridProps = {
@@ -17,6 +18,7 @@ export type CardGridProps = {
   textColor: string
   paddingTop: number
   paddingBottom: number
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const CardGrid: ComponentConfig<CardGridProps> = {
@@ -32,6 +34,17 @@ export const CardGrid: ComponentConfig<CardGridProps> = {
         ctaText: { type: "text", label: "Button Text" },
         ctaLink: { type: "text", label: "Button Link" },
         backgroundColor: { type: "text", label: "Card Background (hex)" },
+        animation: {
+          type: "select",
+          label: "Animation",
+          options: [
+            { label: "None", value: "none" },
+            { label: "Fade In", value: "fade" },
+            { label: "Slide Up", value: "slide-up" },
+            { label: "Slide Left", value: "slide-left" },
+            { label: "Slide Right", value: "slide-right" },
+          ],
+        },
       },
       defaultItemProps: {
         imageUrl: "https://placehold.co/600x400",
@@ -40,6 +53,7 @@ export const CardGrid: ComponentConfig<CardGridProps> = {
         ctaText: "Learn More",
         ctaLink: "#",
         backgroundColor: "#ffffff",
+        animation: "none",
       },
     },
     columns: {
@@ -49,6 +63,17 @@ export const CardGrid: ComponentConfig<CardGridProps> = {
         { label: "2 Columns", value: "2" },
         { label: "3 Columns", value: "3" },
         { label: "4 Columns", value: "4" },
+      ],
+    },
+    animation: {
+      type: "select",
+      label: "Section Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
       ],
     },
     backgroundColor: { type: "text", label: "Section Background (hex)" },
@@ -90,6 +115,7 @@ export const CardGrid: ComponentConfig<CardGridProps> = {
     textColor: "#4B5563",
     paddingTop: 64,
     paddingBottom: 64,
+    animation: "none",
   },
   render: ({
     cards,
@@ -99,6 +125,7 @@ export const CardGrid: ComponentConfig<CardGridProps> = {
     textColor,
     paddingTop,
     paddingBottom,
+    animation,
   }) => {
     return (
       <div

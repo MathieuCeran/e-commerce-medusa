@@ -16,6 +16,7 @@ export type HeroProps = {
   titleColor: string
   subtitleColor: string
   titleSize: "medium" | "large" | "xlarge"
+  animation: "none" | "fade" | "slide-up" | "slide-left" | "slide-right"
 }
 
 export const Hero: ComponentConfig<HeroProps> = {
@@ -66,6 +67,17 @@ export const Hero: ComponentConfig<HeroProps> = {
       min: 0,
       max: 100,
     },
+    animation: {
+      type: "select",
+      label: "Animation",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Fade In", value: "fade" },
+        { label: "Slide Up", value: "slide-up" },
+        { label: "Slide Left", value: "slide-left" },
+        { label: "Slide Right", value: "slide-right" },
+      ],
+    },
   },
   defaultProps: {
     title: "Welcome to Our Store",
@@ -83,6 +95,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     subtitleColor: "#ffffff",
     overlayColor: "#000000",
     overlayOpacity: 40,
+    animation: "none",
   },
   render: ({
     title,
@@ -100,6 +113,7 @@ export const Hero: ComponentConfig<HeroProps> = {
     subtitleColor,
     overlayColor,
     overlayOpacity,
+    animation,
   }) => {
     const heightMap = {
       small: 300,
