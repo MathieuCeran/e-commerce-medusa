@@ -21,16 +21,8 @@ const ThemeSettings = model.define("theme_settings", {
   heading_font: model.text().default("Inter"),
   body_font: model.text().default("Inter"),
 
-  // Header/Footer
-  header_variant: model.text().default("one"),
-  footer_variant: model.text().default("one"),
-
   // Product Page Template
   product_template_variant: model.text().default("classique"),
-  header_bg_color: model.text().default("#ffffff"),
-  header_text_color: model.text().default("#111827"),
-  footer_bg_color: model.text().default("#111827"),
-  footer_text_color: model.text().default("#ffffff"),
 
   // Buttons
   button_bg_color: model.text().default("#000000"),
@@ -53,6 +45,9 @@ const ThemeSettings = model.define("theme_settings", {
   show_low_stock: model.boolean().default(false),
   low_stock_threshold: model.number().default(5),
   offer_gift_wrapping: model.boolean().default(false),
+
+  // Integrations
+  figma_access_token: model.text().nullable(),
 })
 
 export default ThemeSettings

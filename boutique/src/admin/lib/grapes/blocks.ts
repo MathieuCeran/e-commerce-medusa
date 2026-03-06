@@ -1,6 +1,97 @@
 import { Editor } from 'grapesjs'
 
+const SEMANTIC_TAGS = [
+  { id: 'div', label: 'div' },
+  { id: 'section', label: 'section' },
+  { id: 'header', label: 'header' },
+  { id: 'footer', label: 'footer' },
+  { id: 'nav', label: 'nav' },
+  { id: 'main', label: 'main' },
+  { id: 'article', label: 'article' },
+  { id: 'aside', label: 'aside' },
+  { id: 'figure', label: 'figure' },
+  { id: 'figcaption', label: 'figcaption' },
+]
+
+const TEXT_TAGS = [
+  { id: 'p', label: 'p' },
+  { id: 'h1', label: 'h1' },
+  { id: 'h2', label: 'h2' },
+  { id: 'h3', label: 'h3' },
+  { id: 'h4', label: 'h4' },
+  { id: 'h5', label: 'h5' },
+  { id: 'h6', label: 'h6' },
+  { id: 'span', label: 'span' },
+  { id: 'a', label: 'a (lien)' },
+  { id: 'blockquote', label: 'blockquote' },
+]
+
+
+function registerSemanticTagChanger(editor: Editor) {
+  // Override default component type to add tag selector + layout role
+  const defaultType = editor.DomComponents.getType('default')
+  const defaultModel = defaultType!.model
+
+  editor.DomComponents.addType('default', {
+    model: {
+      defaults: {
+        ...defaultModel.prototype.defaults,
+        'is-template': false,
+        resizable: { tl: 1, tr: 1, bl: 1, br: 1, tc: 1, bc: 1, ml: 1, mr: 1 },
+        traits: [
+          {
+            type: 'select',
+            name: 'tagName',
+            label: 'Balise HTML',
+            options: [...SEMANTIC_TAGS, ...TEXT_TAGS],
+            changeProp: true,
+          },
+          ...(defaultModel.prototype.defaults.traits || []),
+        ],
+      },
+      init() {
+        this.on('change:is-template', this.handleTemplateChange)
+      },
+      handleTemplateChange() {
+        const isTemplate = this.get('is-template')
+        const el = this.getEl()
+        if (!el) return
+        if (isTemplate) {
+          el.style.outline = '2px dashed #0099ff'
+          el.style.outlineOffset = '-2px'
+        } else {
+          el.style.outline = ''
+          el.style.outlineOffset = ''
+        }
+      },
+    },
+  })
+
+  // Show "Template" switch only on root-level components
+  editor.on('component:selected', (component: any) => {
+    const parent = component.parent()
+    const isRootLevel = !parent || parent.attributes?.type === 'wrapper'
+
+    if (isRootLevel) {
+      if (!component.getTrait('is-template')) {
+        component.addTrait({
+          type: 'checkbox',
+          name: 'is-template',
+          label: 'Template (toutes les pages)',
+          changeProp: true,
+        })
+      }
+    } else {
+      if (component.getTrait('is-template')) {
+        component.removeTrait('is-template')
+      }
+    }
+  })
+}
+
 export function registerBlocks(editor: Editor) {
+  registerSemanticTagChanger(editor)
+
   const bm = editor.Blocks
 
   // --- Layout ---
@@ -223,11 +314,14 @@ export function registerBlocks(editor: Editor) {
         traits: [
           { type: 'text', name: 'data-collection', label: 'Collection Handle' },
           { type: 'number', name: 'data-limit', label: 'Nombre de produits', default: 4, min: 1, max: 12 },
-          { type: 'select', name: 'data-columns', label: 'Colonnes', options: [
-            { id: '2', label: '2' }, { id: '3', label: '3' }, { id: '4', label: '4' }
-          ], default: '4' },
+          {
+            type: 'select', name: 'data-columns', label: 'Colonnes', options: [
+              { id: '2', label: '2' }, { id: '3', label: '3' }, { id: '4', label: '4' }
+            ], default: '4'
+          },
           { type: 'checkbox', name: 'data-show-view-all', label: 'Afficher "Voir tout"' },
         ],
+        resizable: { tl: 1, tr: 1, bl: 1, br: 1, tc: 1, bc: 1, ml: 1, mr: 1, },
       },
     },
   })

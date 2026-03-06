@@ -18,13 +18,7 @@ type ThemeSettingsBody = {
   text_muted_color?: string
   heading_font?: string
   body_font?: string
-  header_variant?: string
-  footer_variant?: string
   product_template_variant?: string
-  header_bg_color?: string
-  header_text_color?: string
-  footer_bg_color?: string
-  footer_text_color?: string
   button_bg_color?: string
   button_text_color?: string
   button_border_radius?: string
@@ -41,6 +35,7 @@ type ThemeSettingsBody = {
   show_low_stock?: boolean
   low_stock_threshold?: number
   offer_gift_wrapping?: boolean
+  figma_access_token?: string | null
 }
 
 // GET /admin/theme-settings — get current theme settings (or create default)
@@ -106,13 +101,7 @@ export const POST = async (
     text_muted_color: body.text_muted_color,
     heading_font: body.heading_font,
     body_font: body.body_font,
-    header_variant: body.header_variant,
-    footer_variant: body.footer_variant,
     product_template_variant: body.product_template_variant,
-    header_bg_color: body.header_bg_color,
-    header_text_color: body.header_text_color,
-    footer_bg_color: body.footer_bg_color,
-    footer_text_color: body.footer_text_color,
     button_bg_color: body.button_bg_color,
     button_text_color: body.button_text_color,
     button_border_radius: body.button_border_radius,
@@ -129,6 +118,7 @@ export const POST = async (
     show_low_stock: body.show_low_stock,
     low_stock_threshold: body.low_stock_threshold,
     offer_gift_wrapping: body.offer_gift_wrapping,
+    figma_access_token: body.figma_access_token,
   }
 
   // Remove undefined values

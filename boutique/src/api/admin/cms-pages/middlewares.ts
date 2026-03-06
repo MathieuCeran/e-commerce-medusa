@@ -46,7 +46,21 @@ export const UpdateCmsPageSchema = z.object({
 
 export type UpdateCmsPageSchema = z.infer<typeof UpdateCmsPageSchema>
 
+export const FigmaImportSchema = z.object({
+  figma_url: z.string().url().min(1),
+})
+
+export type FigmaImportSchema = z.infer<typeof FigmaImportSchema>
+
 export const adminCmsPagesMiddlewares: MiddlewareRoute[] = [
+  {
+    matcher: "/admin/cms-pages/figma-import",
+    method: "POST",
+    middlewares: [
+      authenticate("user", ["session", "bearer"]),
+      validateAndTransformBody(FigmaImportSchema),
+    ],
+  },
   {
     matcher: "/admin/cms-pages",
     method: "GET",

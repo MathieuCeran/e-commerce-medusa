@@ -18,13 +18,7 @@ type ThemeSettings = {
   text_muted_color: string
   heading_font: string
   body_font: string
-  header_variant: string
-  footer_variant: string
   product_template_variant: string
-  header_bg_color: string
-  header_text_color: string
-  footer_bg_color: string
-  footer_text_color: string
   button_bg_color: string
   button_text_color: string
   button_border_radius: string
@@ -41,6 +35,7 @@ type ThemeSettings = {
   show_low_stock: boolean
   low_stock_threshold: number
   offer_gift_wrapping: boolean
+  figma_access_token: string | null
 }
 
 const ColorInput = ({
@@ -168,13 +163,7 @@ const ThemeSettingsPage = () => {
       text_muted_color: form.text_muted_color,
       heading_font: form.heading_font,
       body_font: form.body_font,
-      header_variant: form.header_variant,
-      footer_variant: form.footer_variant,
       product_template_variant: form.product_template_variant,
-      header_bg_color: form.header_bg_color,
-      header_text_color: form.header_text_color,
-      footer_bg_color: form.footer_bg_color,
-      footer_text_color: form.footer_text_color,
       button_bg_color: form.button_bg_color,
       button_text_color: form.button_text_color,
       button_border_radius: form.button_border_radius,
@@ -191,6 +180,7 @@ const ThemeSettingsPage = () => {
       show_low_stock: form.show_low_stock,
       low_stock_threshold: form.low_stock_threshold,
       offer_gift_wrapping: form.offer_gift_wrapping,
+      figma_access_token: form.figma_access_token,
     }
     saveMutation.mutate(payload)
   }
@@ -394,6 +384,28 @@ const ThemeSettingsPage = () => {
                       value={form.body_font || "Inter"}
                       onChange={(e) => updateField("body_font", e.target.value)}
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Integrations */}
+              <div className="py-6">
+                <Text size="base" weight="plus" className="mb-4">
+                  Integrations
+                </Text>
+                <div className="grid grid-cols-1 gap-4" style={{ maxWidth: 480 }}>
+                  <div>
+                    <Label size="small">Figma Access Token</Label>
+                    <Input
+                      size="small"
+                      type="password"
+                      value={form.figma_access_token || ""}
+                      onChange={(e) => updateField("figma_access_token", e.target.value || null)}
+                      placeholder="figd_xxxxxxxxxxxxxxxx"
+                    />
+                    <Text size="xsmall" className="text-ui-fg-muted" style={{ marginTop: 4 }}>
+                      Figma &gt; Settings &gt; Personal access tokens. Necessaire pour l'import Figma dans l'editeur CMS.
+                    </Text>
                   </div>
                 </div>
               </div>
