@@ -361,11 +361,21 @@ const CmsPageEditor = () => {
   const saveMutationRef = useRef(saveMutation)
   useEffect(() => { saveMutationRef.current = saveMutation }, [saveMutation])
 
+  // Editor-only properties that should never be persisted in layout/page data
+  const EDITOR_ONLY_PROPS = new Set(["template-name", "is-template", "layout-role"])
+  // Editor-only outline styles (visual template indicator)
+  const EDITOR_ONLY_STYLES = new Set([
+    "outline", "outline-color", "outline-style", "outline-width", "outline-offset",
+  ])
+
   // Recursively bake all styles into component JSON so they persist across loads.
-  // GrapeJS stores resize/style-manager changes in CssComposer rules (not inline),
-  // and those rules use selectors that change when a component is recreated.
   const serializeWithStyles = useCallback((comp: any): any => {
     const json = comp.toJSON()
+
+    // Strip editor-only properties
+    for (const prop of EDITOR_ONLY_PROPS) {
+      delete json[prop]
+    }
 
     // 1. Get styles from CssComposer rule
     const cssStyle = comp.getStyle() || {}
@@ -373,18 +383,25 @@ const CmsPageEditor = () => {
     // 2. Get inline styles from the rendered DOM element (resize handles set these)
     const el = comp.getEl()
     const domStyle: Record<string, string> = {}
-    if (el) {
+    if (el?.style) {
       const s = el.style
       for (let i = 0; i < s.length; i++) {
         const prop = s[i]
-        domStyle[prop] = s.getPropertyValue(prop)
+        if (!EDITOR_ONLY_STYLES.has(prop)) {
+          domStyle[prop] = s.getPropertyValue(prop)
+        }
       }
     }
 
     // Merge: JSON defaults < CssComposer < DOM inline (most specific wins)
     const merged = { ...(json.style || {}), ...cssStyle, ...domStyle }
+    for (const prop of EDITOR_ONLY_STYLES) {
+      delete merged[prop]
+    }
     if (Object.keys(merged).length > 0) {
       json.style = merged
+    } else {
+      delete json.style
     }
 
     const children = comp.components()
@@ -394,29 +411,79 @@ const CmsPageEditor = () => {
     return json
   }, [])
 
-  // Save template blocks to the layouts API (auto-detect header/footer by position)
-  const saveLayouts = useCallback(async (editor: Editor) => {
-    const components = editor.getComponents()
-    const templateComps = components.models.filter(
-      (m: any) => m.get("is-template")
-    )
+  // Clean outline from a component before export, restore after
+  const withCleanOutline = useCallback((comp: any, fn: () => void) => {
+    const el = comp.getEl()
+    if (el?.style) {
+      el.style.outline = ""
+      el.style.outlineOffset = ""
+    }
+    const origStyle = { ...comp.getStyle() }
+    const clean = { ...origStyle }
+    delete clean["outline"]; delete clean["outline-color"]
+    delete clean["outline-style"]; delete clean["outline-width"]; delete clean["outline-offset"]
+    comp.setStyle(clean)
 
-    for (const comp of templateComps) {
-      const index = components.models.indexOf(comp)
-      const type = index === 0 ? "header" : "footer"
-      const css = editor.getCss({ component: comp, onlyMatched: true }) || ""
+    fn()
+
+    comp.setStyle(origStyle)
+    if (el?.style) {
+      el.style.outline = "2px dashed #0099ff"
+      el.style.outlineOffset = "-2px"
+    }
+  }, [])
+
+  // Save template blocks grouped by name to the layouts API
+  const saveLayouts = useCallback(async (editor: Editor) => {
+    const allModels = editor.getComponents().models
+    // Group root-level components by their template-name
+    const groups = new Map<string, any[]>()
+    for (const comp of allModels) {
+      const name = comp.get("template-name")
+      if (!name) continue
+      if (!groups.has(name)) groups.set(name, [])
+      groups.get(name)!.push(comp)
+    }
+
+    for (const [name, comps] of groups) {
+      const htmlParts: string[] = []
+      const cssParts: string[] = []
+      const componentDataArr: any[] = []
+
+      for (const comp of comps) {
+        withCleanOutline(comp, () => {
+          // Collect HTML
+          try {
+            htmlParts.push(editor.getHtml({ component: comp }))
+          } catch {
+            htmlParts.push(comp.toHTML())
+          }
+          // Collect CSS
+          try {
+            const rawCss = editor.getCss({ component: comp, onlyMatched: true }) || ""
+            const cleaned = rawCss
+              .replace(/\*\s*\{\s*box-sizing\s*:\s*border-box\s*;\s*\}/g, "")
+              .replace(/body\s*\{[^}]*\}/g, "")
+              .replace(/[^{}]*\{\s*\}/g, "")
+              .trim()
+            if (cleaned) cssParts.push(cleaned)
+          } catch { /* skip */ }
+          // Serialize component data
+          componentDataArr.push(serializeWithStyles(comp))
+        })
+      }
 
       await sdk.client.fetch("/admin/cms-layouts", {
         method: "POST",
         body: {
-          type,
-          html: editor.getHtml({ component: comp }),
-          css,
-          component_data: serializeWithStyles(comp),
+          name,
+          html: htmlParts.join("\n"),
+          css: cssParts.join("\n"),
+          component_data: componentDataArr,
         },
       })
     }
-  }, [serializeWithStyles])
+  }, [serializeWithStyles, withCleanOutline])
 
   const saveLayoutsRef = useRef(saveLayouts)
   useEffect(() => { saveLayoutsRef.current = saveLayouts }, [saveLayouts])
@@ -435,7 +502,7 @@ const CmsPageEditor = () => {
     // 2. Build page content EXCLUDING template blocks
     const allComponents = editor.getComponents()
     const pageOnlyComponents = allComponents.models
-      .filter((comp: any) => !comp.get("is-template"))
+      .filter((comp: any) => !comp.get("template-name"))
       .map((comp: any) => comp.toJSON())
 
     const content: GjsContent = {
@@ -498,21 +565,21 @@ const CmsPageEditor = () => {
     // Always inject templates from API (page content never includes them)
     try {
       const res = await sdk.client.fetch<{
-        layouts: Array<{ type: string; component_data: any; css: string }>
+        layouts: Array<{ name: string; component_data: any[]; css: string }>
       }>("/admin/cms-layouts")
 
       for (const layout of res.layouts) {
-        if (!layout.component_data) continue
+        if (!layout.component_data?.length) continue
 
-        const added = layout.type === "header"
-          ? editor.addComponents(layout.component_data, { at: 0 })
-          : editor.addComponents(layout.component_data)
-
-        if (added?.length > 0) {
-          added[0].set("is-template", true)
-          if (layout.css) {
-            editor.Css.addRules(layout.css)
+        // Each layout has an array of stacked sections
+        for (const compData of layout.component_data) {
+          const added = editor.addComponents(compData)
+          if (added?.length > 0) {
+            added[0].set("template-name", layout.name)
           }
+        }
+        if (layout.css) {
+          editor.Css.addRules(layout.css)
         }
       }
     } catch {

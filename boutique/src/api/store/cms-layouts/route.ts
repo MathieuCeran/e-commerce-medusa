@@ -9,7 +9,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const layouts = await service.listCmsLayouts(
     {},
-    { order: { type: "ASC" } }
+    { order: { name: "ASC" } }
   )
 
   res.json({ layouts: buildLayoutMap(layouts) })

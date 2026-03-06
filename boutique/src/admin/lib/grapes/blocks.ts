@@ -28,7 +28,6 @@ const TEXT_TAGS = [
 
 
 function registerSemanticTagChanger(editor: Editor) {
-  // Override default component type to add tag selector + layout role
   const defaultType = editor.DomComponents.getType('default')
   const defaultModel = defaultType!.model
 
@@ -36,7 +35,7 @@ function registerSemanticTagChanger(editor: Editor) {
     model: {
       defaults: {
         ...defaultModel.prototype.defaults,
-        'is-template': false,
+        'template-name': '',
         resizable: { tl: 1, tr: 1, bl: 1, br: 1, tc: 1, bc: 1, ml: 1, mr: 1 },
         traits: [
           {
@@ -50,13 +49,13 @@ function registerSemanticTagChanger(editor: Editor) {
         ],
       },
       init() {
-        this.on('change:is-template', this.handleTemplateChange)
+        this.on('change:template-name', this.handleTemplateNameChange)
       },
-      handleTemplateChange() {
-        const isTemplate = this.get('is-template')
+      handleTemplateNameChange() {
+        const name = this.get('template-name')
         const el = this.getEl()
         if (!el) return
-        if (isTemplate) {
+        if (name) {
           el.style.outline = '2px dashed #0099ff'
           el.style.outlineOffset = '-2px'
         } else {
@@ -67,23 +66,24 @@ function registerSemanticTagChanger(editor: Editor) {
     },
   })
 
-  // Show "Template" switch only on root-level components
+  // Show "Template name" input only on root-level components
   editor.on('component:selected', (component: any) => {
     const parent = component.parent()
     const isRootLevel = !parent || parent.attributes?.type === 'wrapper'
 
     if (isRootLevel) {
-      if (!component.getTrait('is-template')) {
+      if (!component.getTrait('template-name')) {
         component.addTrait({
-          type: 'checkbox',
-          name: 'is-template',
-          label: 'Template (toutes les pages)',
+          type: 'text',
+          name: 'template-name',
+          label: 'Template',
+          placeholder: 'ex: Header, Footer...',
           changeProp: true,
         })
       }
     } else {
-      if (component.getTrait('is-template')) {
-        component.removeTrait('is-template')
+      if (component.getTrait('template-name')) {
+        component.removeTrait('template-name')
       }
     }
   })

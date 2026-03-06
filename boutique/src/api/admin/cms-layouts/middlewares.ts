@@ -6,10 +6,10 @@ import {
 import { z } from "zod"
 
 export const UpsertCmsLayoutSchema = z.object({
-  type: z.enum(["header", "footer"]),
+  name: z.string().min(1),
   html: z.string().default(""),
   css: z.string().default(""),
-  component_data: z.record(z.unknown()).default({}),
+  component_data: z.array(z.record(z.unknown())).default([]),
 })
 
 export type UpsertCmsLayoutSchema = z.infer<typeof UpsertCmsLayoutSchema>
