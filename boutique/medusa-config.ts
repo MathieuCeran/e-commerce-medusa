@@ -7,6 +7,7 @@ module.exports = defineConfig({
     { resolve: "./src/modules/cms-page" },
     { resolve: "./src/modules/theme-settings" },
     { resolve: "./src/modules/product-import" },
+    { resolve: "./src/modules/url-redirect" },
   ],
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,

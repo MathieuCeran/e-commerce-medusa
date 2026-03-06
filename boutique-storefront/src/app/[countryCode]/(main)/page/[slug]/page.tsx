@@ -4,8 +4,9 @@ import { getCmsPage } from "@lib/data/cms-pages"
 import { getRegion } from "@lib/data/regions"
 import { getCollectionByHandle } from "@lib/data/collections"
 import { listProducts } from "@lib/data/products"
-import { PuckRenderer } from "./puck-renderer"
+import { GjsRenderer } from "./gjs-renderer"
 import { HttpTypes } from "@medusajs/types"
+import ProductsGridServer from "./products-grid-server"
 
 type Props = {
   params: Promise<{ countryCode: string; slug: string }>
@@ -29,64 +30,51 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-type PuckContent = {
-  content?: Array<{
-    type: string
-    props?: Record<string, unknown>
-  }>
-  root?: Record<string, unknown>
+type GjsContent = {
+  gjsHtml?: string
+  gjsCss?: string
+  gjsComponents?: unknown
+  gjsStyles?: unknown
+  // Legacy Puck format support
+  content?: unknown[]
+  root?: unknown
 }
 
-async function injectProductsData(
-  content: PuckContent,
-  region: HttpTypes.StoreRegion
-): Promise<PuckContent> {
-  if (!content.content) return content
+// Parse products-grid placeholders from HTML
+function extractProductsGrids(html: string): Array<{
+  fullMatch: string
+  collection: string
+  limit: number
+  columns: string
+  showViewAll: boolean
+}> {
+  const grids: Array<{
+    fullMatch: string
+    collection: string
+    limit: number
+    columns: string
+    showViewAll: boolean
+  }> = []
 
-  const enrichedContent = await Promise.all(
-    content.content.map(async (item) => {
-      if (item.type === "ProductsGrid" && item.props) {
-        const collectionHandle = item.props.collectionHandle as string
-        const limit = (item.props.limit as number) || 4
+  const regex = /<section[^>]*data-component="products-grid"[^>]*>[\s\S]*?<\/section>/g
+  let match
+  while ((match = regex.exec(html)) !== null) {
+    const tag = match[0]
+    const collectionMatch = tag.match(/data-collection="([^"]*)"/)
+    const limitMatch = tag.match(/data-limit="([^"]*)"/)
+    const columnsMatch = tag.match(/data-columns="([^"]*)"/)
+    const viewAllMatch = tag.match(/data-show-view-all="([^"]*)"/)
 
-        let products: HttpTypes.StoreProduct[] = []
-
-        if (collectionHandle) {
-          try {
-            const collection = await getCollectionByHandle(collectionHandle)
-            if (collection) {
-              const { response } = await listProducts({
-                regionId: region.id,
-                queryParams: {
-                  collection_id: [collection.id],
-                  limit,
-                  fields: "*variants.calculated_price",
-                },
-              })
-              products = response.products
-            }
-          } catch (error) {
-            console.error(`Failed to fetch products for collection ${collectionHandle}:`, error)
-          }
-        }
-
-        return {
-          ...item,
-          props: {
-            ...item.props,
-            _products: products,
-            _region: region,
-          },
-        }
-      }
-      return item
+    grids.push({
+      fullMatch: tag,
+      collection: collectionMatch?.[1] || "",
+      limit: parseInt(limitMatch?.[1] || "4"),
+      columns: columnsMatch?.[1] || "4",
+      showViewAll: viewAllMatch?.[1] === "true",
     })
-  )
-
-  return {
-    ...content,
-    content: enrichedContent,
   }
+
+  return grids
 }
 
 export default async function CmsPageRoute({ params }: Props) {
@@ -101,15 +89,117 @@ export default async function CmsPageRoute({ params }: Props) {
     notFound()
   }
 
-  let enrichedContent = page.content as PuckContent
+  const content = page.content as GjsContent
 
-  if (region) {
-    enrichedContent = await injectProductsData(enrichedContent, region)
+  // Handle GrapeJS format
+  if (content?.gjsHtml !== undefined) {
+    let html = content.gjsHtml || ""
+    const css = content.gjsCss || ""
+
+    // Check for products-grid components that need server-side data
+    const productGrids = extractProductsGrids(html)
+    const productGridComponents: Array<{
+      placeholder: string
+      collection: string
+      limit: number
+      columns: string
+      showViewAll: boolean
+      products: HttpTypes.StoreProduct[]
+      region: HttpTypes.StoreRegion | null
+    }> = []
+
+    if (region && productGrids.length > 0) {
+      for (const grid of productGrids) {
+        let products: HttpTypes.StoreProduct[] = []
+
+        if (grid.collection) {
+          try {
+            const collection = await getCollectionByHandle(grid.collection)
+            if (collection) {
+              const { response } = await listProducts({
+                regionId: region.id,
+                queryParams: {
+                  collection_id: [collection.id],
+                  limit: grid.limit,
+                  fields: "*variants.calculated_price",
+                },
+              })
+              products = response.products
+            }
+          } catch (error) {
+            console.error(`Failed to fetch products for collection ${grid.collection}:`, error)
+          }
+        }
+
+        // Replace the placeholder HTML with a marker
+        const markerId = `__PRODUCTS_GRID_${productGridComponents.length}__`
+        html = html.replace(grid.fullMatch, `<div data-products-grid-marker="${markerId}"></div>`)
+
+        productGridComponents.push({
+          placeholder: markerId,
+          ...grid,
+          products,
+          region,
+        })
+      }
+    }
+
+    // Split HTML at product grid markers and interleave React components
+    if (productGridComponents.length > 0) {
+      const parts: React.ReactNode[] = []
+      let remaining = html
+
+      for (let i = 0; i < productGridComponents.length; i++) {
+        const marker = `<div data-products-grid-marker="__PRODUCTS_GRID_${i}__"></div>`
+        const idx = remaining.indexOf(marker)
+
+        if (idx >= 0) {
+          const before = remaining.substring(0, idx)
+          if (before) {
+            parts.push(<div key={`html-${i}`} dangerouslySetInnerHTML={{ __html: before }} />)
+          }
+
+          const pg = productGridComponents[i]
+          parts.push(
+            <ProductsGridServer
+              key={`pg-${i}`}
+              products={pg.products}
+              region={pg.region!}
+              columns={pg.columns}
+              collection={pg.collection}
+              showViewAll={pg.showViewAll}
+            />
+          )
+
+          remaining = remaining.substring(idx + marker.length)
+        }
+      }
+
+      if (remaining) {
+        parts.push(<div key="html-last" dangerouslySetInnerHTML={{ __html: remaining }} />)
+      }
+
+      return (
+        <div>
+          {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
+          {parts}
+        </div>
+      )
+    }
+
+    return (
+      <div>
+        <GjsRenderer html={html} css={css} />
+      </div>
+    )
   }
 
+  // Legacy Puck format fallback - render nothing for old content
   return (
     <div>
-      <PuckRenderer data={enrichedContent} />
+      <p style={{ textAlign: "center", padding: 64, color: "#999" }}>
+        This page uses a legacy format. Please re-edit it in the CMS editor.
+      </p>
     </div>
   )
 }

@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState, useCallback } from "react"
-import { Puck, Data } from "@puckeditor/core"
-import "@puckeditor/core/puck.css"
-import { puckConfig } from "../../../lib/puck/config"
+import grapesjs, { Editor } from "grapesjs"
+import GjsEditor from "@grapesjs/react"
+import gjsPresetWebpage from "grapesjs-preset-webpage"
+import { registerBlocks } from "../../../lib/grapes/blocks"
 import { sdk } from "../../../lib/client"
 import { Button, Text } from "@medusajs/ui"
 
@@ -20,11 +21,19 @@ type CmsPage = {
   updated_at: string
 }
 
+type GjsContent = {
+  gjsHtml?: string
+  gjsCss?: string
+  gjsComponents?: unknown
+  gjsStyles?: unknown
+}
+
 const CmsPageEditor = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [success, setSuccess] = useState("")
+  const [editorRef, setEditorRef] = useState<Editor | null>(null)
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["cms-page", id],
@@ -72,12 +81,55 @@ const CmsPageEditor = () => {
     },
   })
 
-  const handleSave = useCallback(
-    (puckData: Data) => {
-      saveMutation.mutate({ content: puckData })
-    },
-    [saveMutation]
-  )
+  const handleSave = useCallback(() => {
+    if (!editorRef) return
+
+    const content: GjsContent = {
+      gjsHtml: editorRef.getHtml(),
+      gjsCss: editorRef.getCss(),
+      gjsComponents: editorRef.getComponents(),
+      gjsStyles: editorRef.getStyle(),
+    }
+
+    saveMutation.mutate({ content })
+  }, [editorRef, saveMutation])
+
+  const onEditor = useCallback((editor: Editor) => {
+    setEditorRef(editor)
+
+    // Register custom blocks
+    registerBlocks(editor)
+
+    // Load existing content if available
+    const pageContent = data?.page?.content as GjsContent | undefined
+    if (pageContent?.gjsComponents) {
+      editor.setComponents(pageContent.gjsComponents as any)
+      if (pageContent.gjsStyles) {
+        editor.setStyle(pageContent.gjsStyles as any)
+      }
+    } else if (pageContent?.gjsHtml) {
+      editor.setComponents(pageContent.gjsHtml)
+      if (pageContent.gjsCss) {
+        editor.setStyle(pageContent.gjsCss)
+      }
+    }
+
+    // Add save command
+    editor.Commands.add('save-page', {
+      run: () => {
+        const content: GjsContent = {
+          gjsHtml: editor.getHtml(),
+          gjsCss: editor.getCss(),
+          gjsComponents: editor.getComponents(),
+          gjsStyles: editor.getStyle(),
+        }
+        saveMutation.mutate({ content })
+      },
+    })
+
+    // Keyboard shortcut: Ctrl+S to save
+    editor.Keymaps.add('save', 'ctrl+s', 'save-page')
+  }, [data, saveMutation])
 
   if (isLoading) {
     return (
@@ -101,10 +153,6 @@ const CmsPageEditor = () => {
   }
 
   const page = data.page
-  const puckData: Data =
-    page.content && typeof page.content === "object" && "content" in page.content
-      ? (page.content as Data)
-      : { content: [], root: { props: {} } }
 
   const storeFrontUrl = typeof window !== "undefined"
     ? (window as any).__MEDUSA_STORE_URL__ || "http://localhost:8000"
@@ -118,7 +166,7 @@ const CmsPageEditor = () => {
         height: "100vh",
         position: "fixed",
         inset: 0,
-        zIndex: 1000, // Ensure it overlays the Medusa Admin sidebar and header
+        zIndex: 1000,
         background: "var(--bg-base, #fff)",
       }}
     >
@@ -132,6 +180,7 @@ const CmsPageEditor = () => {
           borderBottom: "1px solid var(--border-base, #e5e7eb)",
           background: "var(--bg-base, #fff)",
           flexShrink: 0,
+          zIndex: 10,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -164,11 +213,16 @@ const CmsPageEditor = () => {
               {success}
             </Text>
           )}
-          {saveMutation.isPending && (
-            <Text size="small" className="text-ui-fg-muted">
-              Saving...
-            </Text>
-          )}
+
+          <Button
+            size="small"
+            variant="secondary"
+            onClick={handleSave}
+            isLoading={saveMutation.isPending}
+            disabled={saveMutation.isPending}
+          >
+            Save
+          </Button>
 
           {page.preview_token && (
             <a
@@ -206,9 +260,30 @@ const CmsPageEditor = () => {
         </div>
       </div>
 
-      {/* Puck Editor */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
-        <Puck config={puckConfig} data={puckData} onPublish={handleSave} />
+      {/* GrapeJS Editor */}
+      <div style={{ flex: 1, overflow: "hidden" }}>
+        <GjsEditor
+          grapesjs={grapesjs}
+          grapesjsCss="https://unpkg.com/grapesjs/dist/css/grapes.min.css"
+          plugins={[gjsPresetWebpage]}
+          options={{
+            height: "100%",
+            storageManager: false,
+            canvas: {
+              styles: [
+                'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+              ],
+            },
+            deviceManager: {
+              devices: [
+                { name: 'Desktop', width: '' },
+                { name: 'Tablet', width: '768px', widthMedia: '992px' },
+                { name: 'Mobile', width: '375px', widthMedia: '480px' },
+              ],
+            },
+          }}
+          onEditor={onEditor}
+        />
       </div>
     </div>
   )

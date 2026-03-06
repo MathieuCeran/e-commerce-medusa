@@ -19,6 +19,7 @@ export const CreateCmsPageSchema = z.object({
   seo_meta_title: z.string().max(200).nullish(),
   seo_meta_description: z.string().max(500).nullish(),
   seo_og_image_url: z.string().url().max(2000).nullish(),
+  noindex: z.boolean().optional(),
   content: z.record(z.unknown()).optional(),
 })
 
@@ -39,6 +40,7 @@ export const UpdateCmsPageSchema = z.object({
   seo_meta_title: z.string().max(200).nullish(),
   seo_meta_description: z.string().max(500).nullish(),
   seo_og_image_url: z.string().url().max(2000).nullish(),
+  noindex: z.boolean().optional(),
   content: z.record(z.unknown()).optional(),
 })
 

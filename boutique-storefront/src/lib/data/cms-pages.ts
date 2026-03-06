@@ -190,6 +190,19 @@ export type ThemeSettings = {
   button_bg_color: string
   button_text_color: string
   button_border_radius: string
+  instagram_url: string | null
+  facebook_url: string | null
+  linkedin_url: string | null
+  tiktok_url: string | null
+  pinterest_url: string | null
+  google_business_url: string | null
+  show_out_of_stock: boolean
+  enable_back_in_stock_alerts: boolean
+  show_product_recommendations: boolean
+  show_new_tag: boolean
+  show_low_stock: boolean
+  low_stock_threshold: number
+  offer_gift_wrapping: boolean
 }
 
 export async function getThemeSettings(): Promise<ThemeSettings | null> {

@@ -36,6 +36,23 @@ const ThemeSettings = model.define("theme_settings", {
   button_bg_color: model.text().default("#000000"),
   button_text_color: model.text().default("#ffffff"),
   button_border_radius: model.text().default("4px"),
+
+  // Social Media
+  instagram_url: model.text().nullable(),
+  facebook_url: model.text().nullable(),
+  linkedin_url: model.text().nullable(),
+  tiktok_url: model.text().nullable(),
+  pinterest_url: model.text().nullable(),
+  google_business_url: model.text().nullable(),
+
+  // Store Settings
+  show_out_of_stock: model.boolean().default(false),
+  enable_back_in_stock_alerts: model.boolean().default(false),
+  show_product_recommendations: model.boolean().default(true),
+  show_new_tag: model.boolean().default(true),
+  show_low_stock: model.boolean().default(false),
+  low_stock_threshold: model.number().default(5),
+  offer_gift_wrapping: model.boolean().default(false),
 })
 
 export default ThemeSettings

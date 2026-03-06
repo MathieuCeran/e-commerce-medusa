@@ -13,7 +13,13 @@
       "mcp__plugin_medusa-dev_MedusaDocs__ask_medusa_question",
       "Bash(npm ls:*)",
       "Bash(npx medusa:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(grep:*)",
+      "WebSearch",
+      "WebFetch(domain:grapesjs.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(mv:*)"
     ]
   }
 }

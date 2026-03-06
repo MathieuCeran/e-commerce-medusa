@@ -12,6 +12,7 @@ const CmsPage = model.define("cms_page", {
   content: model.json().default({}),
   preview_token: model.text().nullable(),
   is_system: model.boolean().default(false),
+  noindex: model.boolean().default(false),
 })
 
 export default CmsPage

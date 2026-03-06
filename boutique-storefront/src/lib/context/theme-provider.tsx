@@ -1,6 +1,11 @@
 "use client"
 
+import { createContext, useContext } from "react"
 import { ThemeSettings } from "@lib/data/cms-pages"
+
+const ThemeContext = createContext<ThemeSettings | null>(null)
+
+export const useThemeSettings = () => useContext(ThemeContext)
 
 type ThemeProviderProps = {
   settings: ThemeSettings | null
@@ -31,17 +36,10 @@ export function ThemeProvider({ settings, children }: ThemeProviderProps) {
   } as React.CSSProperties
 
   return (
-    <div style={cssVars} className="theme-root">
-      {children}
-    </div>
+    <ThemeContext.Provider value={settings}>
+      <div style={cssVars} className="theme-root">
+        {children}
+      </div>
+    </ThemeContext.Provider>
   )
 }
-
-// CSS utility classes that use theme variables
-// Add to globals.css:
-// .theme-root { font-family: var(--theme-font-body, inherit); }
-// .theme-heading { font-family: var(--theme-font-heading, inherit); color: var(--theme-heading); }
-// .theme-text { color: var(--theme-text); }
-// .theme-bg { background-color: var(--theme-background); }
-// .theme-link { color: var(--theme-link); }
-// .theme-button { background-color: var(--theme-button-bg); color: var(--theme-button-text); }

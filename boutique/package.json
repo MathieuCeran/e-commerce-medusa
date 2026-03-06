@@ -22,12 +22,14 @@
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
   },
   "dependencies": {
+    "@grapesjs/react": "^2.0.0",
     "@medusajs/admin-sdk": "2.13.1",
     "@medusajs/cli": "2.13.1",
     "@medusajs/framework": "2.13.1",
     "@medusajs/medusa": "2.13.1",
-    "@puckeditor/core": "^0.21.1",
-    "csv-stringify": "^6.6.0"
+    "csv-stringify": "^6.6.0",
+    "grapesjs": "^0.22.14",
+    "grapesjs-preset-webpage": "^1.0.3"
   },
   "devDependencies": {
     "@medusajs/test-utils": "2.13.1",

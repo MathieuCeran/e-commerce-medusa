@@ -28,6 +28,19 @@ type ThemeSettingsBody = {
   button_bg_color?: string
   button_text_color?: string
   button_border_radius?: string
+  instagram_url?: string | null
+  facebook_url?: string | null
+  linkedin_url?: string | null
+  tiktok_url?: string | null
+  pinterest_url?: string | null
+  google_business_url?: string | null
+  show_out_of_stock?: boolean
+  enable_back_in_stock_alerts?: boolean
+  show_product_recommendations?: boolean
+  show_new_tag?: boolean
+  show_low_stock?: boolean
+  low_stock_threshold?: number
+  offer_gift_wrapping?: boolean
 }
 
 // GET /admin/theme-settings — get current theme settings (or create default)
@@ -103,6 +116,19 @@ export const POST = async (
     button_bg_color: body.button_bg_color,
     button_text_color: body.button_text_color,
     button_border_radius: body.button_border_radius,
+    instagram_url: body.instagram_url,
+    facebook_url: body.facebook_url,
+    linkedin_url: body.linkedin_url,
+    tiktok_url: body.tiktok_url,
+    pinterest_url: body.pinterest_url,
+    google_business_url: body.google_business_url,
+    show_out_of_stock: body.show_out_of_stock,
+    enable_back_in_stock_alerts: body.enable_back_in_stock_alerts,
+    show_product_recommendations: body.show_product_recommendations,
+    show_new_tag: body.show_new_tag,
+    show_low_stock: body.show_low_stock,
+    low_stock_threshold: body.low_stock_threshold,
+    offer_gift_wrapping: body.offer_gift_wrapping,
   }
 
   // Remove undefined values
