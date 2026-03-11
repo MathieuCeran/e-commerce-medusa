@@ -35,8 +35,23 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
+  // Fetch the page's assigned layout (if any)
+  let layout = null
+  if (page.layout_id) {
+    try {
+      layout = await cmsPageService.retrieveCmsLayout(page.layout_id)
+    } catch {
+      // Layout may have been deleted
+    }
+  }
+
   // Don't expose preview_token
   const { preview_token, ...previewPage } = page
 
-  res.json({ page: previewPage })
+  res.json({
+    page: previewPage,
+    layout: layout
+      ? { id: layout.id, html: layout.html, css: layout.css, content_position: layout.content_position }
+      : null,
+  })
 }

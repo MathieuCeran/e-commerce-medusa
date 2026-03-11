@@ -1,4 +1,3 @@
-import { useState } from "react"
 import type { EditorRightPanelProps } from "../types"
 
 export type EditorRightPanelFullProps = EditorRightPanelProps & {
@@ -14,6 +13,7 @@ export function EditorRightPanel({
   onLayoutChange,
   onToggleMode,
   onCreateTemplate,
+  onDeleteLayout,
   activeRightTab,
   onTabChange,
 }: EditorRightPanelFullProps) {
@@ -124,33 +124,70 @@ export function EditorRightPanel({
         </select>
 
         {activeLayoutId && (
-          <button
-            onClick={onToggleMode}
-            style={{
-              width: "100%",
-              padding: "6px 0",
-              background: "transparent",
-              border: "1px solid #e0e0e0",
-              borderRadius: 4,
-              color: "#999",
-              fontSize: 12,
-              fontWeight: 500,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              transition: "all 0.15s",
-              marginBottom: 5,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "#7c3aed"
-              e.currentTarget.style.color = "#a855f7"
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "#e0e0e0"
-              e.currentTarget.style.color = "#999"
-            }}
-          >
-            Edit
-          </button>
+          <div style={{ display: "flex", gap: 5, marginBottom: 5 }}>
+            <button
+              onClick={onToggleMode}
+              style={{
+                flex: 1,
+                padding: "6px 0",
+                background: "transparent",
+                border: "1px solid #e0e0e0",
+                borderRadius: 4,
+                color: "#999",
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#7c3aed"
+                e.currentTarget.style.color = "#a855f7"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#e0e0e0"
+                e.currentTarget.style.color = "#999"
+              }}
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                if (!activeLayoutId) return
+                const confirmed = window.confirm(
+                  "Supprimer ce template ? Les pages l'utilisant perdront leur layout."
+                )
+                if (confirmed) onDeleteLayout(activeLayoutId)
+              }}
+              style={{
+                padding: "6px 10px",
+                background: "transparent",
+                border: "1px solid #e0e0e0",
+                borderRadius: 4,
+                color: "#ccc",
+                fontSize: 12,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.15s",
+                display: "flex",
+                alignItems: "center",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#ff3b30"
+                e.currentTarget.style.color = "#ff3b30"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#e0e0e0"
+                e.currentTarget.style.color = "#ccc"
+              }}
+              title="Supprimer ce template"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+            </button>
+          </div>
         )}
 
         <button

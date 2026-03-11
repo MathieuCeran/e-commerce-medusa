@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getCmsPage } from "@lib/data/cms-pages"
+import { mergeLayoutWithContent, HIDE_DEFAULT_NAV_FOOTER_CSS } from "@lib/data/cms-layout-merge"
 import { getRegion } from "@lib/data/regions"
 import { getCollectionByHandle } from "@lib/data/collections"
 import { listProducts } from "@lib/data/products"
@@ -15,9 +16,11 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
 
-  const page = await getCmsPage(slug)
+  const result = await getCmsPage(slug)
 
-  if (!page) return {}
+  if (!result) return {}
+
+  const { page } = result
 
   return {
     title: page.seo_meta_title || page.title,
@@ -80,21 +83,30 @@ function extractProductsGrids(html: string): Array<{
 export default async function CmsPageRoute({ params }: Props) {
   const { slug, countryCode } = await params
 
-  const [page, region] = await Promise.all([
+  const [result, region] = await Promise.all([
     getCmsPage(slug),
     getRegion(countryCode),
   ])
 
-  if (!page) {
+  if (!result) {
     notFound()
   }
 
+  const { page, layout } = result
   const content = page.content as GjsContent
 
-  // Handle GrapeJS format
-  if (content?.gjsHtml !== undefined) {
+  // Handle GrapeJS format (gjsHtml present, or layout provides the HTML)
+  if (content?.gjsHtml !== undefined || layout) {
     let html = content.gjsHtml || ""
-    const css = content.gjsCss || ""
+    let css = content.gjsCss || ""
+    const hasLayout = !!layout
+
+    // Merge layout HTML/CSS with page content if layout exists
+    if (layout) {
+      const merged = mergeLayoutWithContent(layout, html, css)
+      html = merged.html
+      css = merged.css
+    }
 
     // Check for products-grid components that need server-side data
     const productGrids = extractProductsGrids(html)
@@ -180,7 +192,8 @@ export default async function CmsPageRoute({ params }: Props) {
       }
 
       return (
-        <div>
+        <div {...(hasLayout ? { "data-cms-full-layout": "true" } : {})}>
+          {hasLayout && <style dangerouslySetInnerHTML={{ __html: HIDE_DEFAULT_NAV_FOOTER_CSS }} />}
           {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
           {parts}
         </div>
@@ -188,7 +201,8 @@ export default async function CmsPageRoute({ params }: Props) {
     }
 
     return (
-      <div>
+      <div {...(hasLayout ? { "data-cms-full-layout": "true" } : {})}>
+        {hasLayout && <style dangerouslySetInnerHTML={{ __html: HIDE_DEFAULT_NAV_FOOTER_CSS }} />}
         <GjsRenderer html={html} css={css} />
       </div>
     )

@@ -18,6 +18,7 @@ export default async function Footer() {
 
   return (
     <footer
+      data-site-footer
       className="border-t border-ui-border-base w-full"
       style={{
         backgroundColor: "var(--theme-footer-bg, #111827)",

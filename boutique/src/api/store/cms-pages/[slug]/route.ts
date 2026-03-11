@@ -1,7 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { CMS_PAGE_MODULE } from "../../../../modules/cms-page"
 import CmsPageModuleService from "../../../../modules/cms-page/service"
-import { buildLayoutMap } from "../../../../modules/cms-page/utils"
 
 // GET /store/cms-pages/:slug — get published page by slug
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -29,11 +28,23 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  // Fetch layouts (header/footer)
-  const layouts = await cmsPageService.listCmsLayouts({})
+  // Fetch the page's assigned layout (if any)
+  let layout = null
+  if (page.layout_id) {
+    try {
+      layout = await cmsPageService.retrieveCmsLayout(page.layout_id)
+    } catch {
+      // Layout may have been deleted — continue without it
+    }
+  }
 
   // Don't expose preview_token to the public
   const { preview_token, ...publicPage } = page
 
-  res.json({ page: publicPage, layouts: buildLayoutMap(layouts) })
+  res.json({
+    page: publicPage,
+    layout: layout
+      ? { id: layout.id, html: layout.html, css: layout.css, content_position: layout.content_position }
+      : null,
+  })
 }

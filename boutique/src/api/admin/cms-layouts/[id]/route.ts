@@ -23,7 +23,10 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   const service: CmsPageModuleService = req.scope.resolve(CMS_PAGE_MODULE)
-  const layout = await service.updateCmsLayouts(req.params.id, req.validatedBody)
+  const layout = await service.updateCmsLayouts({
+    id: req.params.id,
+    ...req.validatedBody,
+  })
   res.json({ layout })
 }
 
@@ -36,7 +39,7 @@ export const DELETE = async (
   // Null out layout_id on all pages referencing this layout
   const pages = await service.listCmsPages({ layout_id: req.params.id })
   for (const page of pages) {
-    await service.updateCmsPages(page.id, { layout_id: null })
+    await service.updateCmsPages({ id: page.id, layout_id: null })
   }
 
   await service.softDeleteCmsLayouts(req.params.id)

@@ -15,6 +15,15 @@ export function templateSyncPlugin(editor: Editor) {
 /**
  * Calculate where to insert a promoted block in component_data.
  * Returns { insertIndex, newContentPosition }.
+ *
+ * The wrapper in page mode contains:
+ *   [template_before_0..N] [page_0..M] [template_after_0..K]
+ * where contentPosition = N (number of template blocks before content).
+ *
+ * Page blocks are in the range [contentPosition, contentPosition + pageComponentCount).
+ * Promoting a page block places it at the content boundary in template data:
+ *   - First half of page content → before content (content_position increments)
+ *   - Second half → after content (content_position stays)
  */
 export function computePromotePosition(
   componentIndex: number,
@@ -35,20 +44,12 @@ export function computePromotePosition(
       newContentPosition: contentPosition,
     }
   } else {
-    // Block is within the page content range — should not be promoted via this path
-    throw new Error("Cannot promote: component is within page content range")
+    // Block is within the page content range — promote it to template
+    const pageRelativeIndex = componentIndex - contentPosition
+    const inFirstHalf = pageRelativeIndex < pageComponentCount / 2
+    return {
+      insertIndex: contentPosition,
+      newContentPosition: inFirstHalf ? contentPosition + 1 : contentPosition,
+    }
   }
-}
-
-/**
- * Recalculate content_position after demoting (removing) a block from template.
- */
-export function computeDemotePosition(
-  removedIndex: number,
-  contentPosition: number
-): number {
-  if (removedIndex < contentPosition) {
-    return contentPosition - 1
-  }
-  return contentPosition
 }

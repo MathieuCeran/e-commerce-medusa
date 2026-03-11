@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import { getCmsPagePreview } from "@lib/data/cms-pages"
+import { mergeLayoutWithContent, HIDE_DEFAULT_NAV_FOOTER_CSS } from "@lib/data/cms-layout-merge"
 import { GjsRenderer } from "../page/[slug]/gjs-renderer"
 
 type Props = {
@@ -20,15 +21,16 @@ export default async function HomepagePreview({ params, searchParams }: Props) {
     notFound()
   }
 
-  const page = await getCmsPagePreview("/", token)
+  const result = await getCmsPagePreview("/", token)
 
-  if (!page) {
+  if (!result) {
     notFound()
   }
 
+  const { page, layout } = result
   const content = page.content as GjsContent
 
-  if (!content?.gjsHtml) {
+  if (content?.gjsHtml === undefined && !layout) {
     return (
       <p style={{ textAlign: "center", padding: 64, color: "#999" }}>
         This page uses a legacy format. Please re-edit it in the CMS editor.
@@ -36,12 +38,23 @@ export default async function HomepagePreview({ params, searchParams }: Props) {
     )
   }
 
+  let html = content?.gjsHtml || ""
+  let css = content?.gjsCss || ""
+  const hasLayout = !!layout
+
+  if (layout) {
+    const merged = mergeLayoutWithContent(layout, html, css)
+    html = merged.html
+    css = merged.css
+  }
+
   return (
-    <div>
+    <div {...(hasLayout ? { "data-cms-full-layout": "true" } : {})}>
+      {hasLayout && <style dangerouslySetInnerHTML={{ __html: HIDE_DEFAULT_NAV_FOOTER_CSS }} />}
       <div className="bg-yellow-400 text-black text-center py-2 px-4 text-sm font-semibold sticky top-0 z-50">
         PREVIEW MODE — This page is not published yet
       </div>
-      <GjsRenderer html={content.gjsHtml} css={content.gjsCss || ""} />
+      <GjsRenderer html={html} css={css} />
     </div>
   )
 }

@@ -25,7 +25,7 @@ export default async function Nav() {
   const logoUrl = themeSettings?.logo_url
 
   return (
-    <div className="sticky top-0 inset-x-0 z-50 group">
+    <div className="sticky top-0 inset-x-0 z-50 group" data-site-nav>
       <header
         className="relative h-20 mx-auto border-b duration-200 border-ui-border-base"
         style={{

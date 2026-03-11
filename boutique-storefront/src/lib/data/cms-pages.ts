@@ -11,14 +11,27 @@ export type CmsPage = {
   seo_meta_description: string | null
   seo_og_image_url: string | null
   content: Record<string, unknown>
+  layout_id?: string | null
   preview_token?: string | null
   created_at: string
   updated_at: string
 }
 
+export type CmsLayout = {
+  id: string
+  html: string
+  css: string
+  content_position: number
+}
+
+export type CmsPageWithLayout = {
+  page: CmsPage
+  layout: CmsLayout | null
+}
+
 // --- Store (public) API ---
 
-export async function getCmsPage(slug: string): Promise<CmsPage | null> {
+export async function getCmsPage(slug: string): Promise<CmsPageWithLayout | null> {
   try {
     // Encode the slug for URL safety (especially for "/" homepage)
     const encodedSlug = encodeURIComponent(slug)
@@ -32,7 +45,8 @@ export async function getCmsPage(slug: string): Promise<CmsPage | null> {
     if (!res.ok) return null
 
     const data = await res.json()
-    return data.page ?? null
+    if (!data.page) return null
+    return { page: data.page, layout: data.layout ?? null }
   } catch {
     return null
   }
@@ -41,7 +55,7 @@ export async function getCmsPage(slug: string): Promise<CmsPage | null> {
 export async function getCmsPagePreview(
   slug: string,
   token: string
-): Promise<CmsPage | null> {
+): Promise<CmsPageWithLayout | null> {
   try {
     // Encode the slug for URL safety (especially for "/" homepage)
     const encodedSlug = encodeURIComponent(slug)
@@ -58,7 +72,8 @@ export async function getCmsPagePreview(
     if (!res.ok) return null
 
     const data = await res.json()
-    return data.page ?? null
+    if (!data.page) return null
+    return { page: data.page, layout: data.layout ?? null }
   } catch {
     return null
   }

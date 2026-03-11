@@ -23,7 +23,23 @@
       "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql.exe\":*)",
       "mcp__plugin_context7_context7__resolve-library-id",
       "mcp__plugin_context7_context7__query-docs",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(curl -s http://localhost:9000/admin/cms-layouts -H \"Authorization: Bearer test\")",
+      "Skill(code-review:code-review)",
+      "Bash(find \"/c/Users/m.ceran/Desktop/e-commerce/boutique-storefront/src/app/\\\\[countryCode\\\\]/\\(main\\)/page/\\\\[slug\\\\]\" -type f)",
+      "Bash(ls -la \"/c/Users/m.ceran/Desktop/e-commerce/boutique-storefront/src/app/\\\\[countryCode\\\\]/\\(main\\)/\" | grep -E \"page|routes\")",
+      "Bash(bash \"C:\\\\Users\\\\m.ceran\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\superpowers\\\\5.0.0\\\\lib\\\\brainstorm-server\\\\start-server.sh\" --project-dir \"C:\\\\Users\\\\m.ceran\\\\Desktop\\\\e-commerce\\\\boutique\" 2>&1)",
+      "Bash(git add:*)",
+      "Bash(cp \"boutique/src/admin/lib/grapes/framer-theme.ts\" \"boutique/src/admin/lib/grapes/theme.ts\" && git rm \"boutique/src/admin/lib/grapes/framer-theme.ts\" && git add \"boutique/src/admin/lib/grapes/theme.ts\")",
+      "Bash(git rm:*)",
+      "mcp__plugin_learn-medusa_MedusaDocs__ask_medusa_question",
+      "Bash(curl -s http://localhost:9000/store/cms-pages/v2 -H \"x-publishable-api-key: pk_8cff45410a9b73dc0eb32f4f0465b54b3bf8d8b7e7973912b7a1734d14800276\" 2>&1 | head -200)",
+      "Bash(curl -s \"http://localhost:9000/store/cms-pages/v2/preview?token=d4b9709e74966a089112a68a3a444b2667a91ca81e3671cb48a09e0fb7ad620c\" -H \"x-publishable-api-key: pk_8cff45410a9b73dc0eb32f4f0465b54b3bf8d8b7e7973912b7a1734d14800276\" 2>&1 | python3 -m json.tool 2>/dev/null || curl -s \"http://localhost:9000/store/cms-pages/v2/preview?token=d4b9709e74966a089112a68a3a444b2667a91ca81e3671cb48a09e0fb7ad620c\" -H \"x-publishable-api-key: pk_8cff45410a9b73dc0eb32f4f0465b54b3bf8d8b7e7973912b7a1734d14800276\" 2>&1)",
+      "Bash(curl -s \"http://localhost:9000/store/cms-pages/v2\" -H \"x-publishable-api-key: pk_8cff45410a9b73dc0eb32f4f0465b54b3bf8d8b7e7973912b7a1734d14800276\" | python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('layout present:', d.get\\('layout'\\) is not None\\); print\\('gjsHtml key:', 'gjsHtml' in d.get\\('page',{}\\).get\\('content',{}\\)\\); c=d.get\\('page',{}\\).get\\('content',{}\\); print\\('gjsHtml value repr:', repr\\(c.get\\('gjsHtml','MISSING'\\)\\)[:100]\\)\" 2>&1)",
+      "Bash(curl -s \"http://localhost:9000/store/cms-pages/v2\" -H \"x-publishable-api-key: pk_8cff45410a9b73dc0eb32f4f0465b54b3bf8d8b7e7973912b7a1734d14800276\" | node -e \"const d=require\\('fs'\\).readFileSync\\(0,'utf8'\\); const j=JSON.parse\\(d\\); console.log\\('layout:', !!j.layout\\); console.log\\('gjsHtml present:', 'gjsHtml' in \\(j.page?.content||{}\\)\\); console.log\\('gjsHtml value:', JSON.stringify\\(j.page?.content?.gjsHtml\\)?.substring\\(0,80\\)\\)\")",
+      "Bash(curl -s \"http://localhost:9000/store/cms-pages/v2\" -H \"x-publishable-api-key: pk_8cff45410a9b73dc0eb32f4f0465b54b3bf8d8b7e7973912b7a1734d14800276\" | node -e \"const d=require\\('fs'\\).readFileSync\\(0,'utf8'\\); const j=JSON.parse\\(d\\); console.log\\('layout:', j.layout !== null\\); console.log\\('gjsHtml present:', Object.hasOwn\\(j.page.content, 'gjsHtml'\\)\\); console.log\\('gjsHtml:', String\\(j.page.content.gjsHtml\\).substring\\(0,80\\)\\)\")",
+      "Bash(curl -s \"http://localhost:9000/store/cms-pages/v2\" -H \"x-publishable-api-key: pk_8cff45410a9b73dc0eb32f4f0465b54b3bf8d8b7e7973912b7a1734d14800276\" | node -e \"\nvar d = require\\('fs'\\).readFileSync\\(0, 'utf8'\\)\nvar j = JSON.parse\\(d\\)\nconsole.log\\('has layout:', j.layout != null\\)\nconsole.log\\('gjsHtml key exists:', 'gjsHtml' in j.page.content\\)\nconsole.log\\('gjsHtml value \\(truncated\\):', String\\(j.page.content.gjsHtml\\).substring\\(0, 60\\)\\)\nconsole.log\\('layout html has placeholder:', j.layout && j.layout.html.includes\\('CMS_CONTENT_PLACEHOLDER'\\)\\)\n\")",
+      "Bash(mkdir -p /c/tmp && curl -s \"http://localhost:9000/store/cms-pages/v2\" -H \"x-publishable-api-key: pk_8cff45410a9b73dc0eb32f4f0465b54b3bf8d8b7e7973912b7a1734d14800276\" > /c/tmp/cms-response.json && node -e \"var j = JSON.parse\\(require\\('fs'\\).readFileSync\\('C:/tmp/cms-response.json','utf8'\\)\\); console.log\\('layout:', j.layout ? 'yes' : 'no'\\); console.log\\('gjsHtml type:', typeof j.page.content.gjsHtml\\); console.log\\('placeholder in layout:', j.layout ? String\\(j.layout.html.indexOf\\('CMS_CONTENT'\\)\\) : 'n/a'\\)\")"
     ]
   }
 }

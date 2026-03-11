@@ -5,6 +5,7 @@ import { listCollections, getCollectionByHandle } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { listProducts } from "@lib/data/products"
 import { getCmsPage } from "@lib/data/cms-pages"
+import { mergeLayoutWithContent, HIDE_DEFAULT_NAV_FOOTER_CSS } from "@lib/data/cms-layout-merge"
 import { GjsRenderer } from "./page/[slug]/gjs-renderer"
 import ProductsGridServer from "./page/[slug]/products-grid-server"
 import { HttpTypes } from "@medusajs/types"
@@ -14,17 +15,18 @@ type Props = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const homePage = await getCmsPage("/")
+  const result = await getCmsPage("/")
 
-  if (homePage) {
+  if (result) {
+    const { page } = result
     return {
-      title: homePage.seo_meta_title || homePage.title || "Home",
-      description: homePage.seo_meta_description || undefined,
+      title: page.seo_meta_title || page.title || "Home",
+      description: page.seo_meta_description || undefined,
       openGraph: {
-        title: homePage.seo_meta_title || homePage.title,
-        description: homePage.seo_meta_description || undefined,
-        images: homePage.seo_og_image_url
-          ? [{ url: homePage.seo_og_image_url }]
+        title: page.seo_meta_title || page.title,
+        description: page.seo_meta_description || undefined,
+        images: page.seo_og_image_url
+          ? [{ url: page.seo_og_image_url }]
           : undefined,
       },
     }
@@ -88,15 +90,24 @@ export default async function Home(props: Props) {
   const region = await getRegion(countryCode)
 
   // Check for CMS homepage first (slug = "/")
-  const homePage = await getCmsPage("/")
+  const result = await getCmsPage("/")
 
-  if (homePage && region) {
-    const content = homePage.content as GjsContent
+  if (result && region) {
+    const { page, layout } = result
+    const content = page.content as GjsContent
 
-    // Handle GrapeJS format
-    if (content?.gjsHtml !== undefined) {
+    // Handle GrapeJS format (gjsHtml present, or layout provides the HTML)
+    if (content?.gjsHtml !== undefined || layout) {
       let html = content.gjsHtml || ""
-      const css = content.gjsCss || ""
+      let css = content.gjsCss || ""
+      const hasLayout = !!layout
+
+      // Merge layout HTML/CSS with page content if layout exists
+      if (layout) {
+        const merged = mergeLayoutWithContent(layout, html, css)
+        html = merged.html
+        css = merged.css
+      }
 
       // Check for products-grid components that need server-side data
       const productGrids = extractProductsGrids(html)
@@ -179,14 +190,20 @@ export default async function Home(props: Props) {
         }
 
         return (
-          <div>
+          <div {...(hasLayout ? { "data-cms-full-layout": "true" } : {})}>
+            {hasLayout && <style dangerouslySetInnerHTML={{ __html: HIDE_DEFAULT_NAV_FOOTER_CSS }} />}
             {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
             {parts}
           </div>
         )
       }
 
-      return <GjsRenderer html={html} css={css} />
+      return (
+        <div {...(hasLayout ? { "data-cms-full-layout": "true" } : {})}>
+          {hasLayout && <style dangerouslySetInnerHTML={{ __html: HIDE_DEFAULT_NAV_FOOTER_CSS }} />}
+          <GjsRenderer html={html} css={css} />
+        </div>
+      )
     }
 
     // Legacy Puck format - show fallback

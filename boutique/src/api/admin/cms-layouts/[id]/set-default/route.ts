@@ -13,12 +13,13 @@ export const POST = async (
 
   // Unset current default
   const currentDefaults = await service.listCmsLayouts({ is_default: true })
-  for (const layout of currentDefaults) {
-    await service.updateCmsLayouts(layout.id, { is_default: false })
+  for (const l of currentDefaults) {
+    await service.updateCmsLayouts({ id: l.id, is_default: false })
   }
 
   // Set new default
-  const layout = await service.updateCmsLayouts(req.params.id, {
+  const layout = await service.updateCmsLayouts({
+    id: req.params.id,
     is_default: true,
   })
   res.json({ layout })

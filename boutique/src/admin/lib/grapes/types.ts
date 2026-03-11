@@ -34,7 +34,7 @@ export type CmsLayout = {
   is_default: boolean
 }
 
-const EDITOR_ONLY_STYLES = new Set([
+export const EDITOR_ONLY_STYLES = new Set([
   "outline",
   "outline-color",
   "outline-style",
@@ -50,24 +50,6 @@ export function safeGetStyles(editor: Editor): any {
   }
 }
 
-export function serializeWithStyles(editor: Editor) {
-  const wrapper = editor.getWrapper()
-  if (!wrapper) return { components: [], styles: [] }
-  const components = wrapper.components().map((c: any) => c.toJSON())
-  const styles = safeGetStyles(editor)
-  return { components, styles }
-}
-
-export function filterEditorStyles(styles: any[]): any[] {
-  if (!Array.isArray(styles)) return styles
-  return styles.map((rule: any) => {
-    if (!rule.style) return rule
-    const filtered = { ...rule.style }
-    for (const key of EDITOR_ONLY_STYLES) delete filtered[key]
-    return { ...rule, style: filtered }
-  })
-}
-
 // --- Component Prop Interfaces ---
 
 export type EditorToolbarProps = {
@@ -80,7 +62,6 @@ export type EditorToolbarProps = {
   onPublish: () => void
   onUnpublish: () => void
   onDeviceChange: (device: string) => void
-  onFigmaImport: (html: string, css: string) => void
   onNavigateBack: () => void
 }
 
@@ -96,6 +77,7 @@ export type EditorRightPanelProps = {
   onLayoutChange: (layoutId: string | null) => void
   onToggleMode: () => void
   onCreateTemplate: (name: string) => void
+  onDeleteLayout: (layoutId: string) => void
 }
 
 export type GrapesEditorProps = {

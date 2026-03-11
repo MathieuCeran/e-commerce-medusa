@@ -62,70 +62,90 @@ export function contextMenuPlugin(editor: Editor) {
   // Listen for right-click on canvas iframe.
   // NOTE: GrapeJS does NOT have a native "component:contextmenu" event.
   // We intercept the raw DOM contextmenu event on the canvas iframe document.
-  const attachContextMenu = () => {
-    const frameDoc = editor.Canvas.getFrameEl()?.contentDocument
-    if (!frameDoc) return
-    frameDoc.addEventListener("contextmenu", (e: MouseEvent) => {
-      e.preventDefault()
-      const target = e.target as HTMLElement
-      // Walk up to find a GrapeJS component wrapper
-      let el: HTMLElement | null = target
-      let comp: any = null
-      while (el && !comp) {
-        comp = (el as any).__gjsv?.model || null
-        if (!comp) el = el.parentElement
-      }
-      if (!comp) return
+  const contextMenuHandler = (e: MouseEvent) => {
+    e.preventDefault()
+    const target = e.target as HTMLElement
+    // Walk up to find a GrapeJS component wrapper
+    let el: HTMLElement | null = target
+    let comp: any = null
+    while (el && !comp) {
+      comp = (el as any).__gjsv?.model || null
+      if (!comp) el = el.parentElement
+    }
+    if (!comp) return
 
-      selectedComponent = comp
+    selectedComponent = comp
 
-      const isTpl = comp.get("_tpl")
-      const mode = (editor as any).__editorMode || "page"
+    const isTpl = comp.get("_tpl")
+    const mode = (editor as any).__editorMode || "page"
 
-      const items: MenuItem[] = [
-        { label: "Selectionner le parent", action: "select-parent" },
-        { label: "Copier", action: "copy" },
-        { label: "Dupliquer", action: "duplicate" },
-        { separator: true },
-      ]
+    const items: MenuItem[] = [
+      { label: "Selectionner le parent", action: "select-parent" },
+      { label: "Copier", action: "copy" },
+      { label: "Dupliquer", action: "duplicate" },
+      { separator: true },
+    ]
 
-      if (mode === "page" && !isTpl) {
-        items.push({
-          label: "Ajouter au template \u2191",
-          action: "promote",
-          color: "#0099ff",
-          bold: true,
-        })
-        items.push({ separator: true })
-      }
+    if (mode === "page" && !isTpl) {
+      items.push({
+        label: "Ajouter au template \u2191",
+        action: "promote",
+        color: "#0099ff",
+        bold: true,
+      })
+      items.push({ separator: true })
+    }
 
-      if (
-        mode === "template" &&
-        !comp.get("type")?.includes("content-placeholder")
-      ) {
-        items.push({
-          label: "Retirer du template \u2193",
-          action: "demote",
-          color: "#ff9500",
-          bold: true,
-        })
-        items.push({ separator: true })
-      }
+    if (
+      mode === "template" &&
+      !comp.get("type")?.includes("content-placeholder")
+    ) {
+      items.push({
+        label: "Retirer du template \u2193",
+        action: "demote",
+        color: "#ff9500",
+        bold: true,
+      })
+      items.push({ separator: true })
+    }
 
-      if (!isTpl) {
-        items.push({ label: "Supprimer", action: "delete", color: "#ff3b30" })
-      }
+    if (!isTpl) {
+      items.push({ label: "Supprimer", action: "delete", color: "#ff3b30" })
+    }
 
-      // Convert iframe coords to page coords
-      const frame = editor.Canvas.getFrameEl()
-      const rect = frame?.getBoundingClientRect()
-      const x = (rect?.left || 0) + e.clientX
-      const y = (rect?.top || 0) + e.clientY
+    // Convert iframe coords to page coords
+    const frame = editor.Canvas.getFrameEl()
+    const rect = frame?.getBoundingClientRect()
+    const x = (rect?.left || 0) + e.clientX
+    const y = (rect?.top || 0) + e.clientY
 
-      showMenu(x, y, items)
-    })
+    showMenu(x, y, items)
   }
-  editor.on("canvas:frame:load", attachContextMenu)
+
+  const attachContextMenu = () => {
+    const frameEl = editor.Canvas.getFrameEl()
+    const frameDoc = frameEl?.contentDocument
+    if (!frameDoc) return false
+    // Prevent duplicate listeners across multiple attach attempts
+    if ((frameDoc as any).__ctxMenuAttached) return true
+    ;(frameDoc as any).__ctxMenuAttached = true
+    frameDoc.addEventListener("contextmenu", contextMenuHandler)
+    return true
+  }
+
+  // Try multiple hooks to ensure attachment regardless of init timing:
+  // 1. canvas:frame:load — fires when iframe loads
+  editor.on("canvas:frame:load", () => attachContextMenu())
+  // 2. canvas:frame:load:body — fires after body is rendered with components
+  editor.on("canvas:frame:load:body", () => attachContextMenu())
+  // 3. editor "load" — fires when editor is fully initialized
+  editor.on("load", () => {
+    if (!attachContextMenu()) {
+      // Last resort: retry with delay if frame still not ready
+      setTimeout(() => attachContextMenu(), 200)
+    }
+  })
+  // 4. Immediate attempt
   attachContextMenu()
 
   // Handle built-in actions
@@ -138,17 +158,22 @@ export function contextMenuPlugin(editor: Editor) {
   editor.on("context-menu:delete", (comp: any) => comp.remove())
 
   // Close on click outside / Escape
-  const onDocClick = () => hideMenu()
+  // Use mousedown in capture phase — fires before GrapeJS can stopPropagation
+  const onDocMouseDown = (e: MouseEvent) => {
+    if (e.button !== 0) return // only left click
+    if (menuEl && menuEl.contains(e.target as Node)) return // click on menu item
+    hideMenu()
+  }
   const onDocKeydown = (e: KeyboardEvent) => {
     if (e.key === "Escape") hideMenu()
   }
-  document.addEventListener("click", onDocClick)
-  document.addEventListener("keydown", onDocKeydown)
+  document.addEventListener("mousedown", onDocMouseDown, true)
+  document.addEventListener("keydown", onDocKeydown, true)
 
   // Cleanup on editor destroy to prevent listener leaks
   editor.on("destroy", () => {
-    document.removeEventListener("click", onDocClick)
-    document.removeEventListener("keydown", onDocKeydown)
+    document.removeEventListener("mousedown", onDocMouseDown, true)
+    document.removeEventListener("keydown", onDocKeydown, true)
     menuEl?.remove()
     menuEl = null
   })

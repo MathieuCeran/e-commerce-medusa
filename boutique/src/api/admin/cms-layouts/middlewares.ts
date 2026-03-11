@@ -8,6 +8,10 @@ import { z } from "zod"
 export const CreateCmsLayoutSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
+  component_data: z.array(z.any()).optional(),
+  css: z.string().optional(),
+  html: z.string().optional(),
+  content_position: z.number().int().min(-1).optional(),
 })
 export type CreateCmsLayoutSchema = z.infer<typeof CreateCmsLayoutSchema>
 

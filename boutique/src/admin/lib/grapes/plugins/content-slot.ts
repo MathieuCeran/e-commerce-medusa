@@ -1,6 +1,76 @@
 import type { Editor } from "grapesjs"
 
 export function contentSlotPlugin(editor: Editor) {
+  // Content zone: invisible wrapper around page content in page mode.
+  // Only this zone is droppable — template blocks and the main wrapper are not.
+  editor.DomComponents.addType("content-zone", {
+    model: {
+      defaults: {
+        tagName: "div",
+        droppable: true,
+        removable: false,
+        copyable: false,
+        draggable: false,
+        selectable: false,
+        hoverable: false,
+        highlightable: false,
+        badgable: false,
+        layerable: false,
+        attributes: { "data-content-zone": "true" },
+        style: {
+          width: "100%",
+          padding: "0",
+          margin: "0",
+          "min-height": "0",
+        },
+      },
+      init() {
+        this.set("custom-name", "Content Zone")
+      },
+    },
+    view: {
+      onRender({ el, model }: { el: HTMLElement; model: any }) {
+        let placeholderEl: HTMLElement | null = null
+
+        const updatePlaceholder = () => {
+          const hasChildren = model.components().length > 0
+          if (!hasChildren && !placeholderEl) {
+            placeholderEl = document.createElement("div")
+            placeholderEl.setAttribute("data-cz-placeholder", "true")
+            placeholderEl.style.cssText = `
+              min-height:220px; padding:48px 24px; margin:0;
+              border:2px dashed rgba(99,102,241,0.3); border-radius:12px;
+              background:rgba(99,102,241,0.03);
+              display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+              pointer-events:none; user-select:none;
+            `
+            placeholderEl.innerHTML = `
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                   stroke="rgba(99,102,241,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              <span style="color:rgba(99,102,241,0.55);font-size:13px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;">
+                Glissez vos blocs ici
+              </span>
+              <span style="color:rgba(99,102,241,0.35);font-size:11px;font-family:-apple-system,system-ui,sans-serif;">
+                Zone de contenu de la page
+              </span>
+            `
+            el.appendChild(placeholderEl)
+          } else if (hasChildren && placeholderEl) {
+            placeholderEl.remove()
+            placeholderEl = null
+          }
+        }
+
+        model.components().on("add remove reset", updatePlaceholder)
+        updatePlaceholder()
+      },
+    },
+  })
+
   editor.DomComponents.addType("content-placeholder", {
     isComponent: (el) =>
       el.getAttribute?.("data-type") === "content-placeholder",
@@ -34,10 +104,10 @@ export function contentSlotPlugin(editor: Editor) {
         },
       },
       init() {
-        this.set("custom-name", "Content Zone")
+        this.set("custom-name", "Content Placeholder")
       },
       toHTML() {
-        return "" // Placeholder is never rendered in final HTML
+        return "<!-- CMS_CONTENT_PLACEHOLDER -->"
       },
     },
     view: {
@@ -107,4 +177,37 @@ export function getContentPlaceholderIndex(editor: Editor): number {
     if (models[i].get("type") === "content-placeholder") return i
   }
   return -1
+}
+
+/**
+ * Find the content-zone component in the wrapper (if any).
+ */
+export function getContentZone(editor: Editor): any | null {
+  const wrapper = editor.getWrapper()
+  if (!wrapper) return null
+  return (
+    wrapper
+      .components()
+      .models.find((c: any) => c.get("type") === "content-zone") || null
+  )
+}
+
+/**
+ * Get page content component models (handles both content-zone and flat wrapper).
+ */
+export function getPageContentModels(editor: Editor): any[] {
+  const zone = getContentZone(editor)
+  if (zone) {
+    return zone.components().models.slice()
+  }
+  const wrapper = editor.getWrapper()
+  if (!wrapper) return []
+  return wrapper
+    .components()
+    .models.filter(
+      (c: any) =>
+        !c.get("_tpl") &&
+        c.get("type") !== "content-placeholder" &&
+        c.get("type") !== "content-zone"
+    )
 }

@@ -10,6 +10,7 @@ const CmsPage = model.define("cms_page", {
   seo_meta_description: model.text().nullable(),
   seo_og_image_url: model.text().nullable(),
   content: model.json().default({}),
+  layout_id: model.text().nullable(),
   preview_token: model.text().nullable(),
   is_system: model.boolean().default(false),
   noindex: model.boolean().default(false),

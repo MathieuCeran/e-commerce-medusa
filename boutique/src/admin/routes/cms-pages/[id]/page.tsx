@@ -7,9 +7,13 @@ import { removeFramerTheme } from "../../../lib/grapes/theme"
 import {
   addContentPlaceholder,
   getContentPlaceholderIndex,
+  getContentZone,
+  getPageContentModels,
 } from "../../../lib/grapes/plugins/content-slot"
-import { safeGetStyles } from "../../../lib/grapes/types"
+import { computePromotePosition } from "../../../lib/grapes/plugins/template-sync"
+import { EDITOR_ONLY_STYLES, safeGetStyles } from "../../../lib/grapes/types"
 import type { CmsPage, CmsLayout, GjsContent, EditorMode } from "../../../lib/grapes/types"
+import { lockComponent } from "../../../lib/grapes/plugins/block-lock"
 
 // Extracted components
 import { FigmaImportModal } from "../../../lib/grapes/editor/FigmaImportModal"
@@ -19,32 +23,6 @@ import { EditorRightPanel } from "../../../lib/grapes/editor/EditorRightPanel"
 import { GrapesEditor } from "../../../lib/grapes/editor/GrapesEditor"
 
 // ── Helpers ──────────────────────────────────────────────
-
-const EDITOR_ONLY_STYLES = new Set([
-  "outline", "outline-color", "outline-style", "outline-width", "outline-offset",
-])
-
-function lockComponent(comp: any, isRoot = true) {
-  comp.set({
-    locked: true,
-    selectable: false,
-    hoverable: false,
-    editable: false,
-    draggable: false,
-    removable: false,
-    copyable: false,
-    highlightable: false,
-  })
-  if (isRoot) {
-    comp.set("_tpl", true)
-    comp.addAttributes({ "data-tpl-locked": "true" })
-    // Ensure stable UUID for cross-mode identification
-    if (!comp.getAttributes()["data-tpl-block-id"]) {
-      comp.addAttributes({ "data-tpl-block-id": crypto.randomUUID() })
-    }
-  }
-  comp.components().forEach((child: any) => lockComponent(child, false))
-}
 
 function rebuildPageView(
   editor: Editor,
@@ -64,15 +42,22 @@ function rebuildPageView(
         ? Math.min(layout.content_position, layout.component_data.length)
         : layout.component_data.length
 
+    // Wrapper is NOT droppable — only content-zone is
+    wrapper.set("droppable", false)
+
     // Template before content
     for (let i = 0; i < pos; i++) {
       const added = editor.addComponents(layout.component_data[i])
       if (added?.length) lockComponent(added[0])
     }
 
-    // Page content
+    // Content zone — only droppable area for page blocks
+    const zone = wrapper.components().add(
+      { type: "content-zone" },
+      { at: pos }
+    )
     for (const comp of pageComponents) {
-      editor.addComponents(comp)
+      zone.components().add(comp)
     }
 
     // Template after content
@@ -81,6 +66,8 @@ function rebuildPageView(
       if (added?.length) lockComponent(added[0])
     }
   } else {
+    // No template — wrapper is droppable normally
+    wrapper.set("droppable", true)
     for (const comp of pageComponents) {
       editor.addComponents(comp)
     }
@@ -95,14 +82,7 @@ function rebuildPageView(
 }
 
 function extractPageComponents(editor: Editor): any[] {
-  const wrapper = editor.getWrapper()
-  if (!wrapper) return []
-  return wrapper
-    .components()
-    .models.filter(
-      (c: any) => !c.get("_tpl") && c.get("type") !== "content-placeholder"
-    )
-    .map((c: any) => c.toJSON())
+  return getPageContentModels(editor).map((c: any) => c.toJSON())
 }
 
 // ── Main Editor Component ────────────────────────────────
@@ -228,11 +208,22 @@ const CmsPageEditor = () => {
   // ── Serialize ──
 
   const serializeWithStyles = useCallback((comp: any): any => {
-    const json = comp.toJSON()
+    let json: any
+    try {
+      json = comp.toJSON()
+    } catch {
+      // Fallback for components with broken internal references
+      json = {
+        tagName: comp.get?.("tagName") || "div",
+        type: comp.get?.("type") || "",
+        attributes: comp.getAttributes?.() || {},
+        content: comp.get?.("content") || "",
+      }
+    }
     delete json["_tpl"]
 
-    const cssStyle = comp.getStyle() || {}
-    const el = comp.getEl()
+    const cssStyle = comp.getStyle?.() || {}
+    const el = comp.getEl?.()
     const domStyle: Record<string, string> = {}
     if (el?.style) {
       const s = el.style
@@ -249,9 +240,16 @@ const CmsPageEditor = () => {
     if (Object.keys(merged).length > 0) json.style = merged
     else delete json.style
 
-    const children = comp.components()
+    const children = comp.components?.()
     if (children && children.length > 0) {
-      json.components = children.map((child: any) => serializeWithStyles(child))
+      json.components = []
+      children.forEach((child: any) => {
+        if (!child) return
+        try {
+          json.components.push(serializeWithStyles(child))
+        } catch { /* skip broken child */ }
+      })
+      if (json.components.length === 0) delete json.components
     }
     return json
   }, [])
@@ -263,15 +261,15 @@ const CmsPageEditor = () => {
       if (!editorRef) return
       const editor = editorRef
 
-      // Stash page components (only non-template ones) with their full styles
-      pageComponentsStash.current = editor.getWrapper()
-        ?.components()
-        .models.filter((c: any) => !c.get("_tpl") && c.get("type") !== "content-placeholder")
-        .map((c: any) => serializeWithStyles(c)) || []
+      // Stash page components (from content-zone or wrapper) with their full styles
+      pageComponentsStash.current = getPageContentModels(editor)
+        .map((c: any) => serializeWithStyles(c))
       pageStylesStash.current = safeGetStyles(editor)
 
-      // Clear
-      editor.getWrapper()?.components().reset()
+      // Clear and re-enable droppable for template editing
+      const wrapper = editor.getWrapper()
+      wrapper?.components().reset()
+      wrapper?.set("droppable", true)
       editor.setStyle([])
 
       const layout = layoutId
@@ -325,7 +323,11 @@ const CmsPageEditor = () => {
     const htmlParts: string[] = []
     const cssParts: string[] = []
     for (const comp of allModels) {
-      if (comp.get("type") === "content-placeholder") continue
+      // Include the content-placeholder marker in the HTML output
+      if (comp.get("type") === "content-placeholder") {
+        htmlParts.push("<!-- CMS_CONTENT_PLACEHOLDER -->")
+        continue
+      }
       try {
         htmlParts.push(editor.getHtml({ component: comp }))
       } catch {
@@ -343,20 +345,26 @@ const CmsPageEditor = () => {
     }
 
     try {
-      const result = await sdk.client.fetch<{ layout: CmsLayout }>(
-        "/admin/cms-layouts",
-        {
-          method: "POST",
-          body: {
-            name: editingTemplateName,
-            html: htmlParts.join("\n"),
-            css: cssParts.join("\n"),
-            component_data: templateComps,
-            content_position:
-              contentPos >= 0 ? contentPos : templateComps.length,
-          },
-        }
-      )
+      const layoutBody = {
+        name: editingTemplateName,
+        html: htmlParts.join("\n"),
+        css: cssParts.join("\n"),
+        component_data: templateComps,
+        content_position:
+          contentPos >= 0 ? contentPos : templateComps.length,
+      }
+
+      // Update existing layout or create a new one
+      const existingLayoutId = selectedLayoutIdRef.current
+      const result = existingLayoutId
+        ? await sdk.client.fetch<{ layout: CmsLayout }>(
+            `/admin/cms-layouts/${existingLayoutId}`,
+            { method: "POST", body: layoutBody }
+          )
+        : await sdk.client.fetch<{ layout: CmsLayout }>(
+            "/admin/cms-layouts",
+            { method: "POST", body: layoutBody }
+          )
 
       const savedLayoutId = result.layout.id
 
@@ -416,15 +424,33 @@ const CmsPageEditor = () => {
 
   const doSave = useCallback(
     async (editor: Editor) => {
-      const wrapper = editor.getWrapper()
-      if (!wrapper) return
-
-      const pageComponents = wrapper
-        .components()
-        .models.filter((c: any) => !c.get("_tpl") && c.get("type") !== "content-placeholder")
+      const pageContentModels = getPageContentModels(editor)
+      const pageComponents = pageContentModels
         .map((c: any) => serializeWithStyles(c))
 
+      // Generate HTML/CSS for storefront rendering
+      const htmlParts: string[] = []
+      const cssParts: string[] = []
+      for (const comp of pageContentModels) {
+        try {
+          htmlParts.push(editor.getHtml({ component: comp }))
+        } catch {
+          htmlParts.push(comp.toHTML())
+        }
+        try {
+          const raw = editor.getCss({ component: comp, onlyMatched: true }) || ""
+          const cleaned = raw
+            .replace(/\*\s*\{\s*box-sizing\s*:\s*border-box\s*;\s*\}/g, "")
+            .replace(/body\s*\{[^}]*\}/g, "")
+            .replace(/[^{}]*\{\s*\}/g, "")
+            .trim()
+          if (cleaned) cssParts.push(cleaned)
+        } catch { /* skip */ }
+      }
+
       const content: GjsContent = {
+        gjsHtml: htmlParts.join("\n"),
+        gjsCss: cssParts.join("\n"),
         gjsComponents: pageComponents,
         gjsStyles: safeGetStyles(editor),
       }
@@ -495,7 +521,13 @@ const CmsPageEditor = () => {
   const handleFigmaImport = useCallback(
     (html: string, css: string) => {
       if (!editorRef) return
-      editorRef.addComponents(html)
+      // Add inside content-zone if it exists, otherwise to wrapper
+      const zone = getContentZone(editorRef)
+      if (zone) {
+        zone.components().add(html)
+      } else {
+        editorRef.addComponents(html)
+      }
       if (css) editorRef.Css.addRules(css)
       setSuccess("Figma imported!")
       setTimeout(() => setSuccess(""), 3000)
@@ -511,21 +543,34 @@ const CmsPageEditor = () => {
     setEditorRef(editor)
 
     // Inject canvas CSS: reset body margin + locked template components
+    const canvasCSSContent = [
+      'body { margin: 0 !important; padding: 0 !important; min-height: auto !important; }',
+      '[data-tpl-locked="true"] { position: relative !important; box-shadow: inset 0 0 0 2px rgba(168, 85, 247, 0.35) !important; cursor: pointer !important; }',
+      '[data-tpl-locked="true"] * { pointer-events: none !important; }',
+      '[data-tpl-locked="true"]::before { content: "" !important; position: absolute !important; inset: 0 !important; background: rgba(168, 85, 247, 0.04) !important; pointer-events: none !important; z-index: 1 !important; }',
+      '[data-tpl-locked="true"]::after { content: "\\1F512  Template" !important; position: absolute !important; top: 8px !important; right: 10px !important; font-size: 11px !important; font-weight: 600 !important; color: rgba(168, 85, 247, 0.85) !important; background: rgba(255, 255, 255, 0.92) !important; border: 1px solid rgba(168, 85, 247, 0.25) !important; padding: 3px 10px !important; border-radius: 6px !important; letter-spacing: 0.02em !important; pointer-events: none !important; z-index: 10 !important; font-family: -apple-system, system-ui, sans-serif !important; backdrop-filter: blur(4px) !important; }',
+    ].join('\n')
+
     const injectCanvasCSS = () => {
+      // Try both methods to get the iframe document
       const doc = editor.Canvas.getDocument()
-      if (doc && !doc.getElementById("canvas-custom-css")) {
-        const s = doc.createElement("style")
-        s.id = "canvas-custom-css"
-        s.textContent = [
-          'body { margin: 0 !important; padding: 0 !important; min-height: auto !important; }',
-          '[data-tpl-locked="true"] { opacity: 0.5 !important; pointer-events: none !important; }',
-        ].join('\n')
-        doc.head.appendChild(s)
-      }
+        || editor.Canvas.getFrameEl()?.contentDocument
+      if (!doc) return false
+      if (doc.getElementById("canvas-custom-css")) return true
+      const s = doc.createElement("style")
+      s.id = "canvas-custom-css"
+      s.textContent = canvasCSSContent
+      doc.head.appendChild(s)
+      return true
     }
-    editor.on("canvas:frame:load", injectCanvasCSS)
-    // Also try immediately in case frame already loaded
-    try { injectCanvasCSS() } catch { /* frame not ready */ }
+    editor.on("canvas:frame:load", () => injectCanvasCSS())
+    editor.on("canvas:frame:load:body", () => injectCanvasCSS())
+    editor.on("load", () => {
+      if (!injectCanvasCSS()) {
+        setTimeout(() => injectCanvasCSS(), 300)
+      }
+    })
+    injectCanvasCSS()
 
     // Move GrapeJS views-container into our custom right panel
     setTimeout(() => {
@@ -586,29 +631,134 @@ const CmsPageEditor = () => {
     // Set editor mode for context menu plugin
     ;(editor as any).__editorMode = editorModeRef.current
 
-    // Double-click on template block → switch to template mode
-    editor.on("template:edit-request", ({ componentId }: { componentId: string }) => {
-      const layoutId = selectedLayoutIdRef.current
-      const currentLayout = layoutId
-        ? layoutsRef.current.find((l) => l.id === layoutId)
-        : null
-      if (currentLayout) {
-        enterTemplateMode(currentLayout.id, currentLayout.name)
-      }
-    })
-
-    // Promote request from context menu
+    // Promote request from context menu (page mode → move block into template)
     editor.on("template:promote-request", ({ component }: { component: any }) => {
+      const layoutId = selectedLayoutIdRef.current
+      if (!layoutId) {
+        setErrorMsg("Sélectionnez d'abord un template")
+        return
+      }
       const confirmed = window.confirm(
         "Ce bloc sera partagé sur toutes les pages utilisant ce template"
       )
       if (!confirmed) return
-      // TODO: implement full promote flow with computePromotePosition
+
+      const layout = layoutsRef.current.find((l) => l.id === layoutId)
+      if (!layout) return
+
+      // Capture CSS rules that target this component BEFORE removing
+      let compCss = ""
+      try {
+        const raw = editor.getCss({ component, onlyMatched: true }) || ""
+        compCss = raw
+          .replace(/\*\s*\{\s*box-sizing\s*:\s*border-box\s*;\s*\}/g, "")
+          .replace(/body\s*\{[^}]*\}/g, "")
+          .replace(/[^{}]*\{\s*\}/g, "")
+          .trim()
+      } catch { /* skip */ }
+
+      // Serialize the component (with inline styles) before removing
+      const serialized = serializeWithStyles(component)
+
+      const contentPos = layout.content_position >= 0
+        ? layout.content_position
+        : (layout.component_data?.length || 0)
+
+      // Component lives inside content-zone; find its page-relative index
+      const zone = getContentZone(editor)
+      const pageModels = zone
+        ? zone.components().models
+        : (editor.getWrapper()?.components().models || [])
+      const pageIndex = pageModels.indexOf(component)
+      const pageComponentCount = zone
+        ? pageModels.length
+        : pageModels.filter((c: any) => !c.get("_tpl") && c.get("type") !== "content-zone").length
+
+      // Map page-relative index to wrapper-level index for computePromotePosition
+      const wrapperIndex = contentPos + Math.max(0, pageIndex)
+
+      const { insertIndex, newContentPosition } = computePromotePosition(
+        wrapperIndex, contentPos, pageComponentCount
+      )
+
+      const newTemplateData = [...(layout.component_data || [])]
+      newTemplateData.splice(insertIndex, 0, serialized)
+
+      // Remove from canvas
+      component.remove()
+
+      // Merge CSS rules into the layout's existing CSS
+      const updatedCss = compCss
+        ? (layout.css ? layout.css + "\n" + compCss : compCss)
+        : layout.css || ""
+
+      // Save layout update
+      sdk.client
+        .fetch<{ layout: CmsLayout }>(`/admin/cms-layouts/${layoutId}`, {
+          method: "POST",
+          body: {
+            component_data: newTemplateData,
+            content_position: newContentPosition,
+            css: updatedCss,
+          },
+        })
+        .then(async () => {
+          // Refresh layouts cache
+          const fresh = await sdk.client.fetch<{ layouts: CmsLayout[] }>(
+            "/admin/cms-layouts"
+          )
+          layoutsRef.current = fresh.layouts
+          queryClient.setQueryData(["cms-layouts"], fresh)
+
+          // Rebuild page view with updated template
+          const pageComponents = extractPageComponents(editor)
+          const pageStyles = safeGetStyles(editor)
+          const updatedLayout = fresh.layouts.find((l) => l.id === layoutId)
+
+          editor.getWrapper()?.components().reset()
+          editor.setStyle([])
+          rebuildPageView(editor, updatedLayout || null, pageComponents, pageStyles)
+
+          setSuccess("Bloc ajouté au template!")
+          setTimeout(() => setSuccess(""), 2000)
+        })
+        .catch((err: unknown) => {
+          setErrorMsg(
+            `Promote: ${err instanceof Error ? err.message : "failed"}`
+          )
+        })
     })
 
-    // Demote request from context menu
+    // Demote request from context menu (template mode → remove block from template)
     editor.on("template:demote-request", ({ component }: { component: any }) => {
-      // TODO: implement full demote flow with computeDemotePosition
+      const confirmed = window.confirm(
+        "Ce bloc sera retiré du template"
+      )
+      if (!confirmed) return
+
+      // Serialize before removing (to add to page content stash)
+      const serialized = serializeWithStyles(component)
+
+      // Find its index in wrapper and content placeholder position
+      const wrapper = editor.getWrapper()
+      const models = wrapper?.components().models || []
+      const wrapperIndex = models.indexOf(component)
+      const placeholderIndex = models.findIndex(
+        (c: any) => c.get("type") === "content-placeholder"
+      )
+
+      // Remove from canvas
+      component.remove()
+
+      // Add to page stash so it reappears as page content when exiting template mode
+      if (placeholderIndex >= 0 && wrapperIndex < placeholderIndex) {
+        pageComponentsStash.current.unshift(serialized)
+      } else {
+        pageComponentsStash.current.push(serialized)
+      }
+
+      setSuccess("Bloc retiré du template")
+      setTimeout(() => setSuccess(""), 2000)
     })
 
     // Ctrl+S
@@ -784,6 +934,23 @@ const CmsPageEditor = () => {
             if (layout) enterTemplateMode(layout.id, layout.name)
           }}
           onCreateTemplate={(name) => enterTemplateMode(null, name)}
+          onDeleteLayout={async (layoutId) => {
+            try {
+              await sdk.client.fetch(`/admin/cms-layouts/${layoutId}`, {
+                method: "DELETE",
+              })
+              await queryClient.invalidateQueries({ queryKey: ["cms-layouts"] })
+              if (selectedLayoutId === layoutId) {
+                setSelectedLayoutId(null)
+                handleLayoutChange(null)
+              }
+              setSuccess("Template supprimé")
+              setTimeout(() => setSuccess(""), 2000)
+            } catch (err: any) {
+              setErrorMsg(err.message || "Erreur lors de la suppression")
+              setTimeout(() => setErrorMsg(""), 3000)
+            }
+          }}
           activeRightTab={activeRightTab}
           onTabChange={switchRightTab}
         />

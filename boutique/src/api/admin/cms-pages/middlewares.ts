@@ -21,6 +21,7 @@ export const CreateCmsPageSchema = z.object({
   seo_og_image_url: z.string().url().max(2000).nullish(),
   noindex: z.boolean().optional(),
   content: z.record(z.unknown()).optional(),
+  layout_id: z.string().nullish(),
 })
 
 export type CreateCmsPageSchema = z.infer<typeof CreateCmsPageSchema>
@@ -42,6 +43,7 @@ export const UpdateCmsPageSchema = z.object({
   seo_og_image_url: z.string().url().max(2000).nullish(),
   noindex: z.boolean().optional(),
   content: z.record(z.unknown()).optional(),
+  layout_id: z.string().nullish(),
 })
 
 export type UpdateCmsPageSchema = z.infer<typeof UpdateCmsPageSchema>
