@@ -229,7 +229,7 @@ const DestinationPicker = ({
                       key={p.id}
                       onClick={() => onSelect("cms_page", p.id, p.title)}
                       title={p.title}
-                      subtitle={`/page/${p.slug}`}
+                      subtitle={`/${p.slug}`}
                     />
                   ))}
               </div>

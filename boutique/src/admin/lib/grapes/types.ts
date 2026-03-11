@@ -63,6 +63,7 @@ export type EditorToolbarProps = {
   onUnpublish: () => void
   onDeviceChange: (device: string) => void
   onNavigateBack: () => void
+  parentSlug: string | null
 }
 
 export type EditorSidebarProps = {

@@ -98,6 +98,9 @@ const CmsPageEditor = () => {
   const [activeDevice, setActiveDevice] = useState<"Desktop" | "Tablet" | "Mobile">("Desktop")
   const [activeRightTab, setActiveRightTab] = useState<"style" | "traits" | "layers">("style")
 
+  // ── Parent slug for preview URLs ──
+  const [parentSlug, setParentSlug] = useState<string | null>(null)
+
   // ── Mode state ──
   const [editorMode, setEditorMode] = useState<EditorMode>("page")
   const [selectedLayoutId, setSelectedLayoutId] = useState<string | null>(null)
@@ -127,6 +130,18 @@ const CmsPageEditor = () => {
     queryFn: () =>
       sdk.client.fetch<{ layouts: CmsLayout[] }>("/admin/cms-layouts"),
   })
+
+  // Resolve parent slug for sub-pages (used in preview URL)
+  useEffect(() => {
+    const parentId = data?.page?.parent_id
+    if (parentId) {
+      sdk.client.fetch<{ page: { slug: string } }>(`/admin/cms-pages/${parentId}`)
+        .then((result) => setParentSlug(result.page.slug))
+        .catch(() => setParentSlug(null))
+    } else {
+      setParentSlug(null)
+    }
+  }, [data?.page?.parent_id])
 
   const saveMutation = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -910,6 +925,7 @@ const CmsPageEditor = () => {
         onDoneTemplate={saveTemplateAndExit}
         editorModeName={editingTemplateName}
         storeFrontUrl={storeFrontUrl}
+        parentSlug={parentSlug}
       />
 
       {/* ── Editor + Sidebar ── */}

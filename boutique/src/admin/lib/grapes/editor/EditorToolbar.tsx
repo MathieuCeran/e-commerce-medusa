@@ -86,6 +86,7 @@ export function EditorToolbar({
   onDoneTemplate,
   editorModeName,
   storeFrontUrl,
+  parentSlug,
 }: EditorToolbarFullProps) {
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
@@ -127,11 +128,17 @@ export function EditorToolbar({
   }, [editor, outlinesOn])
 
   const openPreview = useCallback(() => {
+    const fullSlug = page.slug === "/"
+      ? ""
+      : parentSlug
+        ? `/${parentSlug}/${page.slug}`
+        : `/${page.slug}`
+
     const previewUrl = page.preview_token
-      ? `${storeFrontUrl}${page.slug === "/" ? "" : `/page/${page.slug}`}/preview?token=${page.preview_token}`
-      : `${storeFrontUrl}${page.slug === "/" ? "" : `/page/${page.slug}`}`
+      ? `${storeFrontUrl}${fullSlug}?token=${page.preview_token}`
+      : `${storeFrontUrl}${fullSlug}`
     window.open(previewUrl, "_blank")
-  }, [page, storeFrontUrl])
+  }, [page, storeFrontUrl, parentSlug])
 
   const toggleFullscreen = useCallback(() => {
     if (!editor) return
@@ -202,7 +209,11 @@ export function EditorToolbar({
                   fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace",
                 }}
               >
-                {page.slug === "/" ? "/" : `/page/${page.slug}`}
+                {page.slug === "/"
+                  ? "/"
+                  : parentSlug
+                    ? `/${parentSlug}/${page.slug}`
+                    : `/${page.slug}`}
               </span>
               <span
                 style={{
