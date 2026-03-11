@@ -4,11 +4,12 @@ import { useState, useCallback, useEffect, useRef } from "react"
 import grapesjs, { Editor } from "grapesjs"
 import GjsEditor from "@grapesjs/react"
 import gjsPresetWebpage from "grapesjs-preset-webpage"
+import { registerAllBlocks } from "../../../lib/grapes/blocks/index"
+// content-placeholder functions will be imported from plugins/content-slot.ts after Chunk 3
 import {
-  registerBlocks,
   addContentPlaceholder,
   getContentPlaceholderIndex,
-} from "../../../lib/grapes/blocks"
+} from "../../../lib/grapes/blocks/content-placeholder-compat"
 import { injectFramerTheme, removeFramerTheme } from "../../../lib/grapes/theme"
 import { FramerSidebar } from "../../../lib/grapes/framer-sidebar"
 import { sdk } from "../../../lib/client"
@@ -794,7 +795,7 @@ const CmsPageEditor = () => {
     editorInitializedRef.current = true
     setEditorRef(editor)
 
-    registerBlocks(editor)
+    registerAllBlocks(editor)
 
     // Inject canvas CSS: reset body margin + locked template components
     const injectCanvasCSS = () => {
