@@ -2,18 +2,43 @@ import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { MedusaError } from "@medusajs/framework/utils"
+import { CMS_PAGE_MODULE } from "../../../../modules/cms-page"
+import type CmsPageModuleService from "../../../../modules/cms-page/service"
+import type { UpdateCmsLayoutSchema } from "../middlewares"
 
-// DELETE /admin/cms-layouts/:id
+export const GET = async (
+  req: AuthenticatedMedusaRequest,
+  res: MedusaResponse
+) => {
+  const service: CmsPageModuleService = req.scope.resolve(CMS_PAGE_MODULE)
+  const layout = await service.retrieveCmsLayout(req.params.id)
+  if (!layout)
+    throw new MedusaError(MedusaError.Types.NOT_FOUND, "Layout not found")
+  res.json({ layout })
+}
+
+export const POST = async (
+  req: AuthenticatedMedusaRequest<UpdateCmsLayoutSchema>,
+  res: MedusaResponse
+) => {
+  const service: CmsPageModuleService = req.scope.resolve(CMS_PAGE_MODULE)
+  const layout = await service.updateCmsLayouts(req.params.id, req.validatedBody)
+  res.json({ layout })
+}
+
 export const DELETE = async (
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
-  const db = req.scope.resolve(ContainerRegistrationKeys.PG_CONNECTION)
+  const service: CmsPageModuleService = req.scope.resolve(CMS_PAGE_MODULE)
 
-  await db("cms_layout")
-    .where({ id: req.params.id })
-    .update({ deleted_at: new Date() })
+  // Null out layout_id on all pages referencing this layout
+  const pages = await service.listCmsPages({ layout_id: req.params.id })
+  for (const page of pages) {
+    await service.updateCmsPages(page.id, { layout_id: null })
+  }
 
+  await service.softDeleteCmsLayouts(req.params.id)
   res.json({ id: req.params.id, deleted: true })
 }
