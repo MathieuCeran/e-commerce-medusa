@@ -5,32 +5,41 @@ import {
 } from "@medusajs/framework/http"
 import { z } from "zod"
 
-export const UpsertCmsLayoutSchema = z.object({
-  name: z.string().min(1),
-  html: z.string().default(""),
-  css: z.string().default(""),
-  component_data: z.array(z.record(z.unknown())).default([]),
+export const CreateCmsLayoutSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
 })
+export type CreateCmsLayoutSchema = z.infer<typeof CreateCmsLayoutSchema>
 
-export type UpsertCmsLayoutSchema = z.infer<typeof UpsertCmsLayoutSchema>
+export const UpdateCmsLayoutSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(500).nullable().optional(),
+  component_data: z.array(z.any()).optional(),
+  css: z.string().optional(),
+  html: z.string().optional(),
+  content_position: z.number().int().min(-1).optional(),
+})
+export type UpdateCmsLayoutSchema = z.infer<typeof UpdateCmsLayoutSchema>
+
+const auth = authenticate("user", ["session", "bearer"])
 
 export const adminCmsLayoutsMiddlewares: MiddlewareRoute[] = [
-  {
-    matcher: "/admin/cms-layouts",
-    method: "GET",
-    middlewares: [authenticate("user", ["session", "bearer"])],
-  },
+  { matcher: "/admin/cms-layouts", method: "GET", middlewares: [auth] },
   {
     matcher: "/admin/cms-layouts",
     method: "POST",
-    middlewares: [
-      authenticate("user", ["session", "bearer"]),
-      validateAndTransformBody(UpsertCmsLayoutSchema),
-    ],
+    middlewares: [auth, validateAndTransformBody(CreateCmsLayoutSchema)],
   },
+  { matcher: "/admin/cms-layouts/:id", method: "GET", middlewares: [auth] },
   {
     matcher: "/admin/cms-layouts/:id",
-    method: "DELETE",
-    middlewares: [authenticate("user", ["session", "bearer"])],
+    method: "POST",
+    middlewares: [auth, validateAndTransformBody(UpdateCmsLayoutSchema)],
+  },
+  { matcher: "/admin/cms-layouts/:id", method: "DELETE", middlewares: [auth] },
+  {
+    matcher: "/admin/cms-layouts/:id/set-default",
+    method: "POST",
+    middlewares: [auth],
   },
 ]
