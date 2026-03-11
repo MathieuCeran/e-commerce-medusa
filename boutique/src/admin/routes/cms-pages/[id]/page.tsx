@@ -7,7 +7,7 @@ import { removeFramerTheme } from "../../../lib/grapes/theme"
 import {
   addContentPlaceholder,
   getContentPlaceholderIndex,
-} from "../../../lib/grapes/blocks/content-placeholder-compat"
+} from "../../../lib/grapes/plugins/content-slot"
 import { safeGetStyles } from "../../../lib/grapes/types"
 import type { CmsPage, CmsLayout, GjsContent, EditorMode } from "../../../lib/grapes/types"
 
@@ -38,6 +38,10 @@ function lockComponent(comp: any, isRoot = true) {
   if (isRoot) {
     comp.set("_tpl", true)
     comp.addAttributes({ "data-tpl-locked": "true" })
+    // Ensure stable UUID for cross-mode identification
+    if (!comp.getAttributes()["data-tpl-block-id"]) {
+      comp.addAttributes({ "data-tpl-block-id": crypto.randomUUID() })
+    }
   }
   comp.components().forEach((child: any) => lockComponent(child, false))
 }
@@ -196,7 +200,13 @@ const CmsPageEditor = () => {
   useEffect(() => { selectedLayoutIdRef.current = selectedLayoutId }, [selectedLayoutId])
 
   const editorModeRef = useRef<EditorMode>("page")
-  useEffect(() => { editorModeRef.current = editorMode }, [editorMode])
+  useEffect(() => {
+    editorModeRef.current = editorMode
+    // Keep context-menu plugin in sync with current mode
+    if (editorRef) {
+      ;(editorRef as any).__editorMode = editorMode
+    }
+  }, [editorMode, editorRef])
 
   const layoutsRef = useRef<CmsLayout[]>([])
   useEffect(() => {
@@ -572,6 +582,34 @@ const CmsPageEditor = () => {
       : null
 
     rebuildPageView(editor, layout || null, pageComponents, pageStyles)
+
+    // Set editor mode for context menu plugin
+    ;(editor as any).__editorMode = editorModeRef.current
+
+    // Double-click on template block → switch to template mode
+    editor.on("template:edit-request", ({ componentId }: { componentId: string }) => {
+      const layoutId = selectedLayoutIdRef.current
+      const currentLayout = layoutId
+        ? layoutsRef.current.find((l) => l.id === layoutId)
+        : null
+      if (currentLayout) {
+        enterTemplateMode(currentLayout.id, currentLayout.name)
+      }
+    })
+
+    // Promote request from context menu
+    editor.on("template:promote-request", ({ component }: { component: any }) => {
+      const confirmed = window.confirm(
+        "Ce bloc sera partagé sur toutes les pages utilisant ce template"
+      )
+      if (!confirmed) return
+      // TODO: implement full promote flow with computePromotePosition
+    })
+
+    // Demote request from context menu
+    editor.on("template:demote-request", ({ component }: { component: any }) => {
+      // TODO: implement full demote flow with computeDemotePosition
+    })
 
     // Ctrl+S
     editor.Commands.add("save-page", {

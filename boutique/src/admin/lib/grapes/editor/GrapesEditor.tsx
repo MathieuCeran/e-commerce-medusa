@@ -4,6 +4,10 @@ import GjsEditor from "@grapesjs/react"
 import gjsPresetWebpage from "grapesjs-preset-webpage"
 import { registerAllBlocks } from "../blocks"
 import { injectFramerTheme } from "../theme"
+import { contentSlotPlugin, guardContentPlaceholderDuplicates } from "../plugins/content-slot"
+import { blockLockPlugin } from "../plugins/block-lock"
+import { contextMenuPlugin } from "../plugins/context-menu"
+import { templateSyncPlugin } from "../plugins/template-sync"
 import type { GrapesEditorProps } from "../types"
 
 export function GrapesEditor({ onEditor }: GrapesEditorProps) {
@@ -11,6 +15,14 @@ export function GrapesEditor({ onEditor }: GrapesEditorProps) {
     (editor: Editor) => {
       injectFramerTheme()
       registerAllBlocks(editor)
+
+      // Register plugins
+      contentSlotPlugin(editor)
+      guardContentPlaceholderDuplicates(editor)
+      blockLockPlugin(editor)
+      contextMenuPlugin(editor)
+      templateSyncPlugin(editor)
+
       onEditor(editor)
     },
     [onEditor]
