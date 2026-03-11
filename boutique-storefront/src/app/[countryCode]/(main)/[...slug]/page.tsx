@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getCmsPage } from "@lib/data/cms-pages"
+import { getCmsPage, getCmsPagePreview } from "@lib/data/cms-pages"
 import { mergeLayoutWithContent, HIDE_DEFAULT_NAV_FOOTER_CSS } from "@lib/data/cms-layout-merge"
 import { getRegion } from "@lib/data/regions"
 import { getCollectionByHandle } from "@lib/data/collections"
@@ -10,13 +10,20 @@ import { HttpTypes } from "@medusajs/types"
 import ProductsGridServer from "./products-grid-server"
 
 type Props = {
-  params: Promise<{ countryCode: string; slug: string }>
+  params: Promise<{ countryCode: string; slug: string[] }>
+  searchParams: Promise<{ token?: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const { slug: slugSegments } = await params
+  const { token } = await searchParams
 
-  const result = await getCmsPage(slug)
+  if (slugSegments.length > 2) return {}
+
+  const compositeSlug = slugSegments.join("/")
+  const result = token
+    ? await getCmsPagePreview(compositeSlug, token)
+    : await getCmsPage(compositeSlug)
 
   if (!result) return {}
 
@@ -38,7 +45,6 @@ type GjsContent = {
   gjsCss?: string
   gjsComponents?: unknown
   gjsStyles?: unknown
-  // Legacy Puck format support
   content?: unknown[]
   root?: unknown
 }
@@ -80,11 +86,22 @@ function extractProductsGrids(html: string): Array<{
   return grids
 }
 
-export default async function CmsPageRoute({ params }: Props) {
-  const { slug, countryCode } = await params
+export default async function CmsPageRoute({ params, searchParams }: Props) {
+  const { slug: slugSegments, countryCode } = await params
+  const { token } = await searchParams
+
+  // Max 2 segments (parent/child). More = 404.
+  if (slugSegments.length > 2) {
+    notFound()
+  }
+
+  const compositeSlug = slugSegments.join("/")
+  const isPreview = !!token
 
   const [result, region] = await Promise.all([
-    getCmsPage(slug),
+    isPreview
+      ? getCmsPagePreview(compositeSlug, token!)
+      : getCmsPage(compositeSlug),
     getRegion(countryCode),
   ])
 
@@ -97,8 +114,8 @@ export default async function CmsPageRoute({ params }: Props) {
 
   // Handle GrapeJS format (gjsHtml present, or layout provides the HTML)
   if (content?.gjsHtml !== undefined || layout) {
-    let html = content.gjsHtml || ""
-    let css = content.gjsCss || ""
+    let html = content?.gjsHtml || ""
+    let css = content?.gjsCss || ""
     const hasLayout = !!layout
 
     // Merge layout HTML/CSS with page content if layout exists
@@ -143,7 +160,6 @@ export default async function CmsPageRoute({ params }: Props) {
           }
         }
 
-        // Replace the placeholder HTML with a marker
         const markerId = `__PRODUCTS_GRID_${productGridComponents.length}__`
         html = html.replace(grid.fullMatch, `<div data-products-grid-marker="${markerId}"></div>`)
 
@@ -155,6 +171,13 @@ export default async function CmsPageRoute({ params }: Props) {
         })
       }
     }
+
+    // Preview banner
+    const previewBanner = isPreview ? (
+      <div className="bg-yellow-400 text-black text-center py-2 px-4 text-sm font-semibold sticky top-0 z-50">
+        PREVIEW MODE — This page is not published yet
+      </div>
+    ) : null
 
     // Split HTML at product grid markers and interleave React components
     if (productGridComponents.length > 0) {
@@ -194,6 +217,7 @@ export default async function CmsPageRoute({ params }: Props) {
       return (
         <div {...(hasLayout ? { "data-cms-full-layout": "true" } : {})}>
           {hasLayout && <style dangerouslySetInnerHTML={{ __html: HIDE_DEFAULT_NAV_FOOTER_CSS }} />}
+          {previewBanner}
           {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
           {parts}
         </div>
@@ -203,12 +227,13 @@ export default async function CmsPageRoute({ params }: Props) {
     return (
       <div {...(hasLayout ? { "data-cms-full-layout": "true" } : {})}>
         {hasLayout && <style dangerouslySetInnerHTML={{ __html: HIDE_DEFAULT_NAV_FOOTER_CSS }} />}
+        {previewBanner}
         <GjsRenderer html={html} css={css} />
       </div>
     )
   }
 
-  // Legacy Puck format fallback - render nothing for old content
+  // Legacy Puck format fallback
   return (
     <div>
       <p style={{ textAlign: "center", padding: 64, color: "#999" }}>

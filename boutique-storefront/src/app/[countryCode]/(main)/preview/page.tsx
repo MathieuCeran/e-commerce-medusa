@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getCmsPagePreview } from "@lib/data/cms-pages"
 import { mergeLayoutWithContent, HIDE_DEFAULT_NAV_FOOTER_CSS } from "@lib/data/cms-layout-merge"
-import { GjsRenderer } from "../page/[slug]/gjs-renderer"
+import { GjsRenderer } from "../[...slug]/gjs-renderer"
 
 type Props = {
   params: Promise<{ countryCode: string }>
