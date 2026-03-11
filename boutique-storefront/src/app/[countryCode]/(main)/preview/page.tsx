@@ -1,3 +1,4 @@
+import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getCmsPagePreview } from "@lib/data/cms-pages"
 import { mergeLayoutWithContent, HIDE_DEFAULT_NAV_FOOTER_CSS } from "@lib/data/cms-layout-merge"
@@ -11,6 +12,26 @@ type Props = {
 type GjsContent = {
   gjsHtml?: string
   gjsCss?: string
+}
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { token } = await searchParams
+
+  if (!token) return {}
+
+  const result = await getCmsPagePreview("/", token)
+  if (!result) return {}
+
+  const { page } = result
+  return {
+    title: page.seo_meta_title || page.title,
+    description: page.seo_meta_description || undefined,
+    openGraph: {
+      title: page.seo_meta_title || page.title,
+      description: page.seo_meta_description || undefined,
+      images: page.seo_og_image_url ? [{ url: page.seo_og_image_url }] : undefined,
+    },
+  }
 }
 
 // Preview route for homepage (slug = "/")
