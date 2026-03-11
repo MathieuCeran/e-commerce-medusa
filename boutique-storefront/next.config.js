@@ -61,6 +61,15 @@ const nextConfig = {
         : []),
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/:countryCode/page/:slug*",
+        destination: "/:countryCode/:slug*",
+        permanent: true,
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig
