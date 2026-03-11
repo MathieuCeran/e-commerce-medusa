@@ -33,9 +33,7 @@ export type CmsPageWithLayout = {
 
 export async function getCmsPage(slug: string): Promise<CmsPageWithLayout | null> {
   try {
-    // Encode the slug for URL safety (especially for "/" homepage)
-    const encodedSlug = encodeURIComponent(slug)
-    const res = await fetch(`${BACKEND_URL}/store/cms-pages/${encodedSlug}`, {
+    const res = await fetch(`${BACKEND_URL}/store/cms-pages?slug=${encodeURIComponent(slug)}`, {
       headers: {
         "x-publishable-api-key": PUBLISHABLE_KEY,
       },
@@ -57,10 +55,8 @@ export async function getCmsPagePreview(
   token: string
 ): Promise<CmsPageWithLayout | null> {
   try {
-    // Encode the slug for URL safety (especially for "/" homepage)
-    const encodedSlug = encodeURIComponent(slug)
     const res = await fetch(
-      `${BACKEND_URL}/store/cms-pages/${encodedSlug}/preview?token=${encodeURIComponent(token)}`,
+      `${BACKEND_URL}/store/cms-pages/preview?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`,
       {
         headers: {
           "x-publishable-api-key": PUBLISHABLE_KEY,
