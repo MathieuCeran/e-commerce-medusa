@@ -12,6 +12,8 @@ type CreateCmsPageWorkflowInput = {
   seo_meta_description?: string | null
   seo_og_image_url?: string | null
   content?: Record<string, unknown>
+  parent_id?: string | null
+  position?: number
 }
 
 const createCmsPageWorkflow = createWorkflow(

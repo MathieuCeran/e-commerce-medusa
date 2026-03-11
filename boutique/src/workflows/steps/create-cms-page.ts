@@ -10,6 +10,8 @@ type CreateCmsPageStepInput = {
   seo_meta_description?: string | null
   seo_og_image_url?: string | null
   content?: Record<string, unknown>
+  parent_id?: string | null
+  position?: number
 }
 
 export const createCmsPageStep = createStep(
@@ -18,9 +20,10 @@ export const createCmsPageStep = createStep(
     const cmsPageService: CmsPageModuleService =
       container.resolve(CMS_PAGE_MODULE)
 
-    // Check slug uniqueness
+    // Check slug uniqueness within the same parent
     const [existing] = await cmsPageService.listCmsPages({
       slug: input.slug,
+      parent_id: input.parent_id || null,
       ...(input.store_id ? { store_id: input.store_id } : {}),
     })
 

@@ -11,6 +11,8 @@ type UpdateCmsPageStepInput = {
   seo_meta_description?: string | null
   seo_og_image_url?: string | null
   content?: Record<string, unknown>
+  parent_id?: string | null
+  position?: number
 }
 
 export const updateCmsPageStep = createStep(
@@ -22,15 +24,17 @@ export const updateCmsPageStep = createStep(
     // Get current state for rollback
     const existing = await cmsPageService.retrieveCmsPage(input.id)
 
-    // If slug is changing, check uniqueness
+    // If slug is changing, check uniqueness within the same parent
     if (input.slug && input.slug !== existing.slug) {
+      const targetParentId = input.parent_id !== undefined ? input.parent_id : existing.parent_id
       const [conflict] = await cmsPageService.listCmsPages({
         slug: input.slug,
+        parent_id: targetParentId || null,
         ...(existing.store_id ? { store_id: existing.store_id } : {}),
       })
 
       if (conflict) {
-        throw new Error(`A page with slug "${input.slug}" already exists.`)
+        throw new Error(`A page with slug "${input.slug}" already exists under this parent.`)
       }
     }
 
@@ -48,6 +52,8 @@ export const updateCmsPageStep = createStep(
       seo_meta_description: existing.seo_meta_description,
       seo_og_image_url: existing.seo_og_image_url,
       content: existing.content,
+      parent_id: existing.parent_id,
+      position: existing.position,
     })
   },
   async (previousData, { container }) => {
