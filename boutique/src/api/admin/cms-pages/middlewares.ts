@@ -22,6 +22,8 @@ export const CreateCmsPageSchema = z.object({
   noindex: z.boolean().optional(),
   content: z.record(z.unknown()).optional(),
   layout_id: z.string().nullish(),
+  parent_id: z.string().nullish(),
+  position: z.number().int().min(0).optional(),
 })
 
 export type CreateCmsPageSchema = z.infer<typeof CreateCmsPageSchema>
@@ -44,9 +46,23 @@ export const UpdateCmsPageSchema = z.object({
   noindex: z.boolean().optional(),
   content: z.record(z.unknown()).optional(),
   layout_id: z.string().nullish(),
+  parent_id: z.string().nullish(),
+  position: z.number().int().min(0).optional(),
 })
 
 export type UpdateCmsPageSchema = z.infer<typeof UpdateCmsPageSchema>
+
+export const ReorderCmsPagesSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      parent_id: z.string().nullable(),
+      position: z.number().int().min(0),
+    })
+  ),
+})
+
+export type ReorderCmsPagesSchema = z.infer<typeof ReorderCmsPagesSchema>
 
 export const FigmaImportSchema = z.object({
   figma_url: z.string().url().min(1),
@@ -61,6 +77,15 @@ export const adminCmsPagesMiddlewares: MiddlewareRoute[] = [
     middlewares: [
       authenticate("user", ["session", "bearer"]),
       validateAndTransformBody(FigmaImportSchema),
+    ],
+  },
+  // IMPORTANT: reorder must be before :id to avoid matching "reorder" as an id
+  {
+    matcher: "/admin/cms-pages/reorder",
+    method: "POST",
+    middlewares: [
+      authenticate("user", ["session", "bearer"]),
+      validateAndTransformBody(ReorderCmsPagesSchema),
     ],
   },
   {
