@@ -60,22 +60,31 @@ export default async function Home(props: Props) {
       const html = content.gjsHtml || ""
       const css = content.gjsCss || ""
 
+      const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: page.seo_meta_title || page.title || "Home",
+        description: page.seo_meta_description || undefined,
+      }
+
       return (
-        <CmsPageRenderer
-          html={html}
-          css={css}
-          layout={layout || null}
-          context={{ region, countryCode }}
-        />
+        <>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+          <CmsPageRenderer
+            html={html}
+            css={css}
+            layout={layout || null}
+            context={{ region, countryCode }}
+            slug="/"
+          />
+        </>
       )
     }
 
-    // Legacy Puck format - show fallback
-    return (
-      <p style={{ textAlign: "center", padding: 64, color: "#999" }}>
-        This page uses a legacy format. Please re-edit it in the CMS editor.
-      </p>
-    )
+    // No GrapesJS content and no layout — fall through to default homepage
   }
 
   // Fallback to default homepage

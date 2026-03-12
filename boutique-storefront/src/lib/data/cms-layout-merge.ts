@@ -37,4 +37,7 @@ export const HIDE_DEFAULT_NAV_FOOTER_CSS = `
   body:has([data-cms-full-layout]) [data-site-footer] {
     display: none !important;
   }
+  body:has([data-cms-full-layout]) .theme-root {
+    background-color: transparent !important;
+  }
 `

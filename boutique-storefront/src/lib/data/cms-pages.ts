@@ -50,6 +50,22 @@ export async function getCmsPage(slug: string): Promise<CmsPageWithLayout | null
   }
 }
 
+export async function getAllPublishedCmsSlugs(): Promise<string[]> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/store/cms-pages/slugs`, {
+      headers: {
+        "x-publishable-api-key": PUBLISHABLE_KEY,
+      },
+      next: { revalidate: 300 },
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.slugs || []
+  } catch {
+    return []
+  }
+}
+
 export async function getCmsPagePreview(
   slug: string,
   token: string

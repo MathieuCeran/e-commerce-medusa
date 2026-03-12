@@ -5,6 +5,7 @@ import {
 import { extractComponents, hasComponent } from "./hydrate-components"
 import { getComponent, type RenderContext } from "./component-registry"
 import { registerAllComponents } from "./register-components"
+import { sanitizeCmsHtml, stripGjsArtifacts, scopeCmsCss } from "./sanitize"
 
 // Ensure components are registered
 registerAllComponents()
@@ -22,6 +23,7 @@ type CmsPageRendererProps = {
   layout?: CmsLayout | null
   context: RenderContext
   isPreview?: boolean
+  slug: string
 }
 
 export async function CmsPageRenderer({
@@ -30,6 +32,7 @@ export async function CmsPageRenderer({
   layout,
   context,
   isPreview,
+  slug,
 }: CmsPageRendererProps) {
   // 1. Merge layout with page content
   let finalHtml = html
@@ -41,23 +44,30 @@ export async function CmsPageRenderer({
     finalCss = merged.css
   }
 
-  // 2. Smart Nav/Footer detection — only hide defaults if layout provides its own
-  const hasCustomHeader = hasComponent(finalHtml, "site-header")
-  const hasCustomFooter = hasComponent(finalHtml, "site-footer")
-  const hideDefaultNav = hasCustomHeader || hasCustomFooter
+  // 2. Sanitize + strip GrapesJS artifacts + scope CSS
+  finalHtml = sanitizeCmsHtml(finalHtml)
+  finalHtml = stripGjsArtifacts(finalHtml)
+  finalCss = scopeCmsCss(finalCss, slug)
 
-  // 3. Extract component segments from HTML
+  // 3. Hide default Nav/Footer when the CMS page provides its own
+  //    (via a layout template or explicit site-header/site-footer blocks)
+  const hideDefaultNav =
+    !!layout ||
+    hasComponent(finalHtml, "site-header") ||
+    hasComponent(finalHtml, "site-footer")
+
+  // 4. Extract component segments from HTML
   const segments = extractComponents(finalHtml)
 
-  // 4. Resolve server data for each component segment
+  // 5. Resolve server data for each component segment
   const resolvedSegments = await Promise.all(
     segments.map(async (segment) => {
       if (segment.type === "html") return segment
 
       const entry = getComponent(segment.name)
       if (!entry) {
-        // Unknown component — render as static HTML fallback
-        return { type: "html" as const, content: segment.innerHTML }
+        // Unregistered component — render the full GrapesJS element as-is
+        return { type: "html" as const, content: segment.outerHTML }
       }
 
       let serverData: Record<string, any> = {}
@@ -83,9 +93,9 @@ export async function CmsPageRenderer({
     })
   )
 
-  // 5. Render
+  // 6. Render
   return (
-    <div data-cms-full-layout={hideDefaultNav ? "true" : undefined}>
+    <div data-cms-page={slug} data-cms-full-layout={hideDefaultNav ? "true" : undefined}>
       {hideDefaultNav && (
         <style dangerouslySetInnerHTML={{ __html: HIDE_DEFAULT_NAV_FOOTER_CSS }} />
       )}

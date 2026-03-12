@@ -19,10 +19,10 @@ const nextConfig = {
     },
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     remotePatterns: [
@@ -60,15 +60,6 @@ const nextConfig = {
           ]
         : []),
     ],
-  },
-  async redirects() {
-    return [
-      {
-        source: "/:countryCode/page/:slug*",
-        destination: "/:countryCode/:slug*",
-        permanent: true,
-      },
-    ]
   },
 }
 

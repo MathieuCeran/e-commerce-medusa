@@ -4,7 +4,7 @@ import UrlRedirectModuleService from "../../modules/url-redirect/service"
 
 type CreateUrlRedirectStepInput = {
   source_url: string
-  target_type?: string
+  target_type?: "homepage" | "cms_page" | "product_category" | "product"
   target_id?: string | null
   target_label?: string | null
   status_code?: number

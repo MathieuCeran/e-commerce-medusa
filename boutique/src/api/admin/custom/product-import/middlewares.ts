@@ -18,7 +18,7 @@ const upload = multer({
     if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true)
     } else {
-      cb(new Error(`Type de fichier invalide: ${file.mimetype}`))
+      cb(new Error(`Type de fichier invalide: ${file.mimetype}`), false)
     }
   },
 })

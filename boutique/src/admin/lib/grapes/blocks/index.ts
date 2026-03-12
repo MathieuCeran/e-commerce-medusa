@@ -1,4 +1,5 @@
 import type { Editor } from "grapesjs"
+import { registerAllTypes } from "../types/index"
 import { registerSectionBlocks } from "./sections"
 import { registerBasicBlocks } from "./basic"
 import { registerEcommerceBlocks } from "./ecommerce"
@@ -57,6 +58,7 @@ function registerSemanticTagChanger(editor: Editor) {
 }
 
 export function registerAllBlocks(editor: Editor) {
+  registerAllTypes(editor)
   registerSemanticTagChanger(editor)
   registerSectionBlocks(editor)
   registerNavigationBlocks(editor)

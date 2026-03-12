@@ -21,7 +21,7 @@ export function contentSlotPlugin(editor: Editor) {
           width: "100%",
           padding: "0",
           margin: "0",
-          "min-height": "0",
+          "min-height": "60px",
         },
       },
       init() {
@@ -31,33 +31,39 @@ export function contentSlotPlugin(editor: Editor) {
     view: {
       onRender({ el, model }: { el: HTMLElement; model: any }) {
         let placeholderEl: HTMLElement | null = null
+        let pendingUpdate: ReturnType<typeof setTimeout> | null = null
 
-        const updatePlaceholder = () => {
+        const createPlaceholder = () => {
+          const ph = document.createElement("div")
+          ph.setAttribute("data-cz-placeholder", "true")
+          ph.style.cssText = `
+            min-height:220px; padding:48px 24px; margin:0;
+            border:2px dashed rgba(99,102,241,0.3); border-radius:12px;
+            background:rgba(99,102,241,0.03);
+            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+            pointer-events:none; user-select:none;
+          `
+          ph.innerHTML = `
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                 stroke="rgba(99,102,241,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            <span style="color:rgba(99,102,241,0.55);font-size:13px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;">
+              Glissez vos blocs ici
+            </span>
+            <span style="color:rgba(99,102,241,0.35);font-size:11px;font-family:-apple-system,system-ui,sans-serif;">
+              Zone de contenu de la page
+            </span>
+          `
+          return ph
+        }
+
+        const doUpdate = () => {
           const hasChildren = model.components().length > 0
           if (!hasChildren && !placeholderEl) {
-            placeholderEl = document.createElement("div")
-            placeholderEl.setAttribute("data-cz-placeholder", "true")
-            placeholderEl.style.cssText = `
-              min-height:220px; padding:48px 24px; margin:0;
-              border:2px dashed rgba(99,102,241,0.3); border-radius:12px;
-              background:rgba(99,102,241,0.03);
-              display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
-              pointer-events:none; user-select:none;
-            `
-            placeholderEl.innerHTML = `
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                   stroke="rgba(99,102,241,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <line x1="12" y1="8" x2="12" y2="16"/>
-                <line x1="8" y1="12" x2="16" y2="12"/>
-              </svg>
-              <span style="color:rgba(99,102,241,0.55);font-size:13px;font-weight:600;font-family:-apple-system,system-ui,sans-serif;">
-                Glissez vos blocs ici
-              </span>
-              <span style="color:rgba(99,102,241,0.35);font-size:11px;font-family:-apple-system,system-ui,sans-serif;">
-                Zone de contenu de la page
-              </span>
-            `
+            placeholderEl = createPlaceholder()
             el.appendChild(placeholderEl)
           } else if (hasChildren && placeholderEl) {
             placeholderEl.remove()
@@ -65,8 +71,15 @@ export function contentSlotPlugin(editor: Editor) {
           }
         }
 
-        model.components().on("add remove reset", updatePlaceholder)
-        updatePlaceholder()
+        // Debounce to handle rapid add/remove cycles from the GrapesJS
+        // sorter during drag (ghost components added then removed).
+        const debouncedUpdate = () => {
+          if (pendingUpdate !== null) clearTimeout(pendingUpdate)
+          pendingUpdate = setTimeout(doUpdate, 80)
+        }
+
+        model.components().on("add remove reset", debouncedUpdate)
+        doUpdate()
       },
     },
   })

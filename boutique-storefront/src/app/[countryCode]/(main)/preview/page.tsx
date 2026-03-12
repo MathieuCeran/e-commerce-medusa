@@ -73,6 +73,7 @@ export default async function HomepagePreview({ params, searchParams }: Props) {
       layout={layout || null}
       context={{ region: region!, countryCode }}
       isPreview
+      slug="/"
     />
   )
 }

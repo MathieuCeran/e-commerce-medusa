@@ -71,10 +71,12 @@ const Shipping: React.FC<ShippingProps> = ({
   const isOpen = searchParams.get("step") === "delivery"
 
   const _shippingMethods = availableShippingMethods?.filter(
+    // @ts-expect-error // TODO: fix upstream type — service_zone not in StoreCartShippingOption types
     (sm) => sm.service_zone?.fulfillment_set?.type !== "pickup"
   )
 
   const _pickupMethods = availableShippingMethods?.filter(
+    // @ts-expect-error // TODO: fix upstream type — service_zone not in StoreCartShippingOption types
     (sm) => sm.service_zone?.fulfillment_set?.type === "pickup"
   )
 
@@ -342,6 +344,7 @@ const Shipping: React.FC<ShippingProps> = ({
                               </span>
                               <span className="text-base-regular text-ui-fg-muted">
                                 {formatAddress(
+                                  // @ts-expect-error // TODO: fix upstream type — service_zone not in StoreCartShippingOption types
                                   option.service_zone?.fulfillment_set?.location
                                     ?.address
                                 )}

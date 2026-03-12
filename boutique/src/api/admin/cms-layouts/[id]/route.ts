@@ -25,7 +25,8 @@ export const POST = async (
   const service: CmsPageModuleService = req.scope.resolve(CMS_PAGE_MODULE)
   const layout = await service.updateCmsLayouts({
     id: req.params.id,
-    ...req.validatedBody,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...(req.validatedBody as any),
   })
   res.json({ layout })
 }

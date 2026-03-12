@@ -6,6 +6,7 @@ export type ComponentSegment = {
   name: string
   attrs: Record<string, string>
   innerHTML: string
+  outerHTML: string
 }
 export type Segment = HtmlSegment | ComponentSegment
 
@@ -28,6 +29,7 @@ export function extractComponents(html: string): Segment[] {
     name: string
     attrs: Record<string, string>
     innerHTML: string
+    outerHTML: string
   }> = []
 
   componentNodes.forEach((node, i) => {
@@ -41,7 +43,9 @@ export function extractComponents(html: string): Segment[] {
       }
     }
 
-    components.push({ marker, name, attrs, innerHTML: node.innerHTML })
+    // Capture outerHTML before replacing — used as fallback for static rendering
+    const outerHTML = node.toString()
+    components.push({ marker, name, attrs, innerHTML: node.innerHTML, outerHTML })
     node.replaceWith(marker)
   })
 
@@ -51,6 +55,11 @@ export function extractComponents(html: string): Segment[] {
 
   for (const comp of components) {
     const idx = remaining.indexOf(comp.marker)
+    if (idx === -1) {
+      // Marker not found — render as static HTML fallback
+      segments.push({ type: "html", content: comp.innerHTML })
+      continue
+    }
     if (idx > 0) {
       const htmlChunk = remaining.slice(0, idx).trim()
       if (htmlChunk) {
@@ -62,6 +71,7 @@ export function extractComponents(html: string): Segment[] {
       name: comp.name,
       attrs: comp.attrs,
       innerHTML: comp.innerHTML,
+      outerHTML: comp.outerHTML,
     })
     remaining = remaining.slice(idx + comp.marker.length)
   }

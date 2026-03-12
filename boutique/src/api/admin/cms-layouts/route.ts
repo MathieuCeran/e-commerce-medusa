@@ -20,6 +20,7 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   const service: CmsPageModuleService = req.scope.resolve(CMS_PAGE_MODULE)
-  const layout = await service.createCmsLayouts(req.validatedBody)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const layout = await service.createCmsLayouts(req.validatedBody as any)
   res.status(201).json({ layout })
 }

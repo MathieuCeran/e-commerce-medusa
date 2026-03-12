@@ -1,8 +1,29 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getCmsPage, getCmsPagePreview } from "@lib/data/cms-pages"
+import { getCmsPage, getCmsPagePreview, getAllPublishedCmsSlugs } from "@lib/data/cms-pages"
 import { getRegion } from "@lib/data/regions"
+import { listRegions } from "@lib/data/regions"
 import { CmsPageRenderer } from "@lib/cms/cms-page-renderer"
+
+export const revalidate = 60
+
+export async function generateStaticParams() {
+  const [slugs, regions] = await Promise.all([
+    getAllPublishedCmsSlugs(),
+    listRegions(),
+  ])
+
+  const countryCodes = regions
+    ?.flatMap((r) => r.countries?.map((c) => c.iso_2))
+    .filter((c): c is string => Boolean(c)) || []
+
+  return countryCodes.flatMap((countryCode) =>
+    slugs.map((slug) => ({
+      countryCode,
+      slug: slug.split("/"),
+    }))
+  )
+}
 
 type Props = {
   params: Promise<{ countryCode: string; slug: string[] }>
@@ -75,23 +96,31 @@ export default async function CmsPageRoute({ params, searchParams }: Props) {
     const html = content?.gjsHtml || ""
     const css = content?.gjsCss || ""
 
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: page.seo_meta_title || page.title,
+      description: page.seo_meta_description || undefined,
+    }
+
     return (
-      <CmsPageRenderer
-        html={html}
-        css={css}
-        layout={layout || null}
-        context={{ region: region!, countryCode }}
-        isPreview={isPreview}
-      />
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <CmsPageRenderer
+          html={html}
+          css={css}
+          layout={layout || null}
+          context={{ region: region!, countryCode }}
+          isPreview={isPreview}
+          slug={compositeSlug}
+        />
+      </>
     )
   }
 
-  // Legacy Puck format fallback
-  return (
-    <div>
-      <p style={{ textAlign: "center", padding: 64, color: "#999" }}>
-        This page uses a legacy format. Please re-edit it in the CMS editor.
-      </p>
-    </div>
-  )
+  // No renderable content
+  notFound()
 }

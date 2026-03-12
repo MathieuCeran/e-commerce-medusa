@@ -400,7 +400,7 @@ const ThemeSettingsPage = () => {
                       size="small"
                       type="password"
                       value={form.figma_access_token || ""}
-                      onChange={(e) => updateField("figma_access_token", e.target.value || null)}
+                      onChange={(e) => updateField("figma_access_token", e.target.value || "")}
                       placeholder="figd_xxxxxxxxxxxxxxxx"
                     />
                     <Text size="xsmall" className="text-ui-fg-muted" style={{ marginTop: 4 }}>

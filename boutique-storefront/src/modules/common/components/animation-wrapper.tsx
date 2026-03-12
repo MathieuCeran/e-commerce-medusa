@@ -47,6 +47,7 @@ export const AnimationWrapper = ({
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-50px" }}
+      // @ts-expect-error // TODO: fix upstream type — framer-motion Variants ease type mismatch
       variants={variants}
       className={className}
     >

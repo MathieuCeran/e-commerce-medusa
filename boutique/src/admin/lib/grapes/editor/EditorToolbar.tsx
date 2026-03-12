@@ -61,6 +61,7 @@ export type EditorToolbarFullProps = EditorToolbarProps & {
   isPublishing: boolean
   isUnpublishing: boolean
   onShowFigma: () => void
+  onFigmaImport?: (html: string, css: string) => void
   onCancelTemplate: () => void
   onDoneTemplate: () => void
   storeFrontUrl: string
@@ -128,6 +129,9 @@ export function EditorToolbar({
   }, [editor, outlinesOn])
 
   const openPreview = useCallback(() => {
+    // Auto-save before opening preview so the API returns fresh data
+    onSave()
+
     const fullSlug = page.slug === "/"
       ? ""
       : parentSlug
@@ -137,8 +141,9 @@ export function EditorToolbar({
     const previewUrl = page.preview_token
       ? `${storeFrontUrl}${fullSlug}?token=${page.preview_token}`
       : `${storeFrontUrl}${fullSlug}`
-    window.open(previewUrl, "_blank")
-  }, [page, storeFrontUrl, parentSlug])
+    // Small delay to let the save request start
+    setTimeout(() => window.open(previewUrl, "_blank"), 300)
+  }, [page, storeFrontUrl, parentSlug, onSave])
 
   const toggleFullscreen = useCallback(() => {
     if (!editor) return

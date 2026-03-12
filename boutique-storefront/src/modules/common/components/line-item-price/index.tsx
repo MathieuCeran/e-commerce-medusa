@@ -15,8 +15,9 @@ const LineItemPrice = ({
   currencyCode,
 }: LineItemPriceProps) => {
   const { total, original_total } = item
-  const originalPrice = original_total
-  const currentPrice = total
+  // TODO: fix upstream type — @medusajs/types has total/original_total as possibly undefined
+  const originalPrice = original_total as number
+  const currentPrice = total as number
   const hasReducedPrice = currentPrice < originalPrice
 
   return (

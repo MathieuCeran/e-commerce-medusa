@@ -13,8 +13,10 @@ type UpdateCmsPageWorkflowInput = {
   seo_meta_description?: string | null
   seo_og_image_url?: string | null
   content?: Record<string, unknown>
+  layout_id?: string | null
   parent_id?: string | null
   position?: number
+  noindex?: boolean
 }
 
 const updateCmsPageWorkflow = createWorkflow(

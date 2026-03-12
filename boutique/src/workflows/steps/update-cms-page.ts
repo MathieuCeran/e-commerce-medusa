@@ -11,8 +11,10 @@ type UpdateCmsPageStepInput = {
   seo_meta_description?: string | null
   seo_og_image_url?: string | null
   content?: Record<string, unknown>
+  layout_id?: string | null
   parent_id?: string | null
   position?: number
+  noindex?: boolean
 }
 
 export const updateCmsPageStep = createStep(
@@ -52,8 +54,10 @@ export const updateCmsPageStep = createStep(
       seo_meta_description: existing.seo_meta_description,
       seo_og_image_url: existing.seo_og_image_url,
       content: existing.content,
+      layout_id: existing.layout_id,
       parent_id: existing.parent_id,
       position: existing.position,
+      noindex: existing.noindex,
     })
   },
   async (previousData, { container }) => {

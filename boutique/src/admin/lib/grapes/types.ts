@@ -7,6 +7,7 @@ export type GjsContent = {
   gjsCss?: string
   gjsComponents?: any
   gjsStyles?: any
+  gjsProjectData?: any
 }
 
 export type CmsPage = {
@@ -21,6 +22,7 @@ export type CmsPage = {
   layout_id: string | null
   preview_token: string | null
   updated_at: string
+  parent_id: string | null
 }
 
 export type CmsLayout = {

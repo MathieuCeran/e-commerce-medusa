@@ -199,7 +199,7 @@ const CmsPageEditor = () => {
     editorModeRef.current = editorMode
     // Keep context-menu plugin in sync with current mode
     if (editorRef) {
-      ;(editorRef as any).__editorMode = editorMode
+      ; (editorRef as any).__editorMode = editorMode
     }
   }, [editorMode, editorRef])
 
@@ -211,12 +211,14 @@ const CmsPageEditor = () => {
   const pageComponentsStash = useRef<any[]>([])
   const pageStylesStash = useRef<any>(null)
 
-  const initialContentRef = useRef<GjsContent | undefined>(undefined)
   const editorInitializedRef = useRef(false)
+  const contentLoadedRef = useRef(false)
   useEffect(() => {
     if (data?.page && !editorInitializedRef.current) {
-      initialContentRef.current = data.page.content as GjsContent
-      if (data.page.layout_id) setSelectedLayoutId(data.page.layout_id)
+      if (data.page.layout_id) {
+        setSelectedLayoutId(data.page.layout_id)
+        selectedLayoutIdRef.current = data.page.layout_id
+      }
     }
   }, [data])
 
@@ -336,9 +338,7 @@ const CmsPageEditor = () => {
       .map((c: any) => serializeWithStyles(c))
 
     const htmlParts: string[] = []
-    const cssParts: string[] = []
     for (const comp of allModels) {
-      // Include the content-placeholder marker in the HTML output
       if (comp.get("type") === "content-placeholder") {
         htmlParts.push("<!-- CMS_CONTENT_PLACEHOLDER -->")
         continue
@@ -348,22 +348,24 @@ const CmsPageEditor = () => {
       } catch {
         htmlParts.push(comp.toHTML())
       }
-      try {
-        const raw = editor.getCss({ component: comp, onlyMatched: true }) || ""
-        const cleaned = raw
-          .replace(/\*\s*\{\s*box-sizing\s*:\s*border-box\s*;\s*\}/g, "")
-          .replace(/body\s*\{[^}]*\}/g, "")
-          .replace(/[^{}]*\{\s*\}/g, "")
-          .trim()
-        if (cleaned) cssParts.push(cleaned)
-      } catch { /* skip */ }
     }
+
+    // Get ALL CSS from the editor (class-based styles from component types)
+    let templateCss = ""
+    try {
+      const raw = editor.getCss() || ""
+      templateCss = raw
+        .replace(/\*\s*\{\s*box-sizing\s*:\s*border-box\s*;\s*\}/g, "")
+        .replace(/body\s*\{[^}]*\}/g, "")
+        .replace(/[^{}]*\{\s*\}/g, "")
+        .trim()
+    } catch { /* skip */ }
 
     try {
       const layoutBody = {
         name: editingTemplateName,
         html: htmlParts.join("\n"),
-        css: cssParts.join("\n"),
+        css: templateCss,
         component_data: templateComps,
         content_position:
           contentPos >= 0 ? contentPos : templateComps.length,
@@ -373,13 +375,13 @@ const CmsPageEditor = () => {
       const existingLayoutId = selectedLayoutIdRef.current
       const result = existingLayoutId
         ? await sdk.client.fetch<{ layout: CmsLayout }>(
-            `/admin/cms-layouts/${existingLayoutId}`,
-            { method: "POST", body: layoutBody }
-          )
+          `/admin/cms-layouts/${existingLayoutId}`,
+          { method: "POST", body: layoutBody }
+        )
         : await sdk.client.fetch<{ layout: CmsLayout }>(
-            "/admin/cms-layouts",
-            { method: "POST", body: layoutBody }
-          )
+          "/admin/cms-layouts",
+          { method: "POST", body: layoutBody }
+        )
 
       const savedLayoutId = result.layout.id
 
@@ -390,6 +392,7 @@ const CmsPageEditor = () => {
       )
       layoutsRef.current = fresh.layouts
       setSelectedLayoutId(savedLayoutId)
+      selectedLayoutIdRef.current = savedLayoutId
 
       setSuccess("Template saved!")
       setTimeout(() => setSuccess(""), 2000)
@@ -437,45 +440,46 @@ const CmsPageEditor = () => {
 
   // ── Page save ──
 
+  const buildSaveBody = useCallback((editor: Editor) => {
+    const pageContentModels = getPageContentModels(editor)
+
+    // Extract HTML per page-content component
+    const htmlParts: string[] = []
+    for (const comp of pageContentModels) {
+      try {
+        htmlParts.push(editor.getHtml({ component: comp }))
+      } catch {
+        htmlParts.push(comp.toHTML())
+      }
+    }
+
+    // Extract ALL CSS from the editor (captures class-based styles from
+    // component type definitions that getCss({ component, onlyMatched })
+    // misses). Clean up GrapesJS default rules.
+    let fullCss = ""
+    try {
+      const raw = editor.getCss() || ""
+      fullCss = raw
+        .replace(/\*\s*\{\s*box-sizing\s*:\s*border-box\s*;\s*\}/g, "")
+        .replace(/body\s*\{[^}]*\}/g, "")
+        .replace(/[^{}]*\{\s*\}/g, "")
+        .trim()
+    } catch { /* skip */ }
+
+    const content: GjsContent = {
+      gjsHtml: htmlParts.join("\n"),
+      gjsCss: fullCss,
+      gjsProjectData: editor.getProjectData(),
+    }
+
+    return { content, layout_id: selectedLayoutIdRef.current }
+  }, [])
+
   const doSave = useCallback(
     async (editor: Editor) => {
-      const pageContentModels = getPageContentModels(editor)
-      const pageComponents = pageContentModels
-        .map((c: any) => serializeWithStyles(c))
-
-      // Generate HTML/CSS for storefront rendering
-      const htmlParts: string[] = []
-      const cssParts: string[] = []
-      for (const comp of pageContentModels) {
-        try {
-          htmlParts.push(editor.getHtml({ component: comp }))
-        } catch {
-          htmlParts.push(comp.toHTML())
-        }
-        try {
-          const raw = editor.getCss({ component: comp, onlyMatched: true }) || ""
-          const cleaned = raw
-            .replace(/\*\s*\{\s*box-sizing\s*:\s*border-box\s*;\s*\}/g, "")
-            .replace(/body\s*\{[^}]*\}/g, "")
-            .replace(/[^{}]*\{\s*\}/g, "")
-            .trim()
-          if (cleaned) cssParts.push(cleaned)
-        } catch { /* skip */ }
-      }
-
-      const content: GjsContent = {
-        gjsHtml: htmlParts.join("\n"),
-        gjsCss: cssParts.join("\n"),
-        gjsComponents: pageComponents,
-        gjsStyles: safeGetStyles(editor),
-      }
-
-      saveMutationRef.current.mutate({
-        content,
-        layout_id: selectedLayoutIdRef.current,
-      })
+      saveMutationRef.current.mutate(buildSaveBody(editor))
     },
-    [serializeWithStyles]
+    [buildSaveBody]
   )
 
   const doSaveRef = useRef(doSave)
@@ -519,6 +523,7 @@ const CmsPageEditor = () => {
       const pageStyles = safeGetStyles(editor)
 
       setSelectedLayoutId(newLayoutId)
+      selectedLayoutIdRef.current = newLayoutId
 
       const layout = newLayoutId
         ? layoutsRef.current.find((l) => l.id === newLayoutId)
@@ -559,7 +564,7 @@ const CmsPageEditor = () => {
 
     // Inject canvas CSS: reset body margin + locked template components
     const canvasCSSContent = [
-      'body { margin: 0 !important; padding: 0 !important; min-height: auto !important; }',
+      'body { margin: 10px !important; padding: 0 !important; min-height: auto !important; background: lightgray!important }',
       '[data-tpl-locked="true"] { position: relative !important; box-shadow: inset 0 0 0 2px rgba(168, 85, 247, 0.35) !important; cursor: pointer !important; }',
       '[data-tpl-locked="true"] * { pointer-events: none !important; }',
       '[data-tpl-locked="true"]::before { content: "" !important; position: absolute !important; inset: 0 !important; background: rgba(168, 85, 247, 0.04) !important; pointer-events: none !important; z-index: 1 !important; }',
@@ -605,46 +610,17 @@ const CmsPageEditor = () => {
       const target = document.getElementById("right-panel-gjs-views")
       if (viewsContainer && target) {
         target.appendChild(viewsContainer)
-        // Make it visible since we hid .gjs-pn-views (the tab bar)
-        ;(viewsContainer as HTMLElement).style.display = "block"
-        ;(viewsContainer as HTMLElement).style.position = "relative"
-        ;(viewsContainer as HTMLElement).style.width = "100%"
-        ;(viewsContainer as HTMLElement).style.height = "auto"
-        ;(viewsContainer as HTMLElement).style.border = "none"
+          // Make it visible since we hid .gjs-pn-views (the tab bar)
+          ; (viewsContainer as HTMLElement).style.display = "block"
+          ; (viewsContainer as HTMLElement).style.position = "relative"
+          ; (viewsContainer as HTMLElement).style.width = "100%"
+          ; (viewsContainer as HTMLElement).style.height = "auto"
+          ; (viewsContainer as HTMLElement).style.border = "none"
       }
     }, 300)
 
-    // Load initial content
-    const pageContent = initialContentRef.current
-    let pageComponents: any[] = []
-    let pageStyles: any = []
-
-    if (pageContent?.gjsComponents) {
-      pageComponents = pageContent.gjsComponents
-      pageStyles = pageContent.gjsStyles || []
-    } else if (pageContent?.gjsHtml) {
-      // Legacy: convert HTML to components
-      editor.setComponents(pageContent.gjsHtml)
-      if (pageContent.gjsCss) editor.setStyle(pageContent.gjsCss)
-      pageComponents = editor
-        .getWrapper()!
-        .components()
-        .models.map((c: any) => c.toJSON())
-      pageStyles = safeGetStyles(editor)
-      editor.getWrapper()?.components().reset()
-      editor.setStyle([])
-    }
-
-    // Find initial layout
-    const layoutId = selectedLayoutIdRef.current
-    const layout = layoutId
-      ? layoutsRef.current.find((l) => l.id === layoutId)
-      : null
-
-    rebuildPageView(editor, layout || null, pageComponents, pageStyles)
-
-    // Set editor mode for context menu plugin
-    ;(editor as any).__editorMode = editorModeRef.current
+      // Set editor mode for context menu plugin
+      ; (editor as any).__editorMode = editorModeRef.current
 
     // Promote request from context menu (page mode → move block into template)
     editor.on("template:promote-request", ({ component }: { component: any }) => {
@@ -789,6 +765,69 @@ const CmsPageEditor = () => {
     editor.Keymaps.add("save", "ctrl+s", "save-page")
   }, [])
 
+  // ── Load content once editor + page data + layouts are all ready ──
+
+  useEffect(() => {
+    if (!editorRef || !data?.page || !layoutsData?.layouts || contentLoadedRef.current) return
+    contentLoadedRef.current = true
+
+    const editor = editorRef
+    const pageContent = data.page.content as GjsContent | undefined
+    let pageComponents: any[] = []
+    let pageStyles: any = []
+
+    if (pageContent?.gjsProjectData) {
+      // Extract page content from getProjectData() snapshot.
+      // The snapshot contains the full editor state (template + content-zone + page blocks).
+      // We extract only the page blocks and rebuild with the CURRENT template from DB.
+      const projectData = pageContent.gjsProjectData
+      // GrapesJS 0.22+ nests the wrapper under pages[].frames[].component
+      const wrapperJson =
+        projectData.pages?.[0]?.frames?.[0]?.component ??
+        projectData.pages?.[0]?.component
+      pageStyles = projectData.styles || []
+
+      if (wrapperJson?.components) {
+        const contentZone = wrapperJson.components.find(
+          (c: any) => c.type === "content-zone"
+        )
+        if (contentZone?.components) {
+          pageComponents = contentZone.components
+        } else {
+          // No content-zone — filter out template blocks
+          pageComponents = wrapperJson.components.filter(
+            (c: any) =>
+              !c.attributes?.["data-tpl-locked"] &&
+              c.type !== "content-zone" &&
+              c.type !== "content-placeholder"
+          )
+        }
+      }
+    } else if (pageContent?.gjsComponents) {
+      pageComponents = pageContent.gjsComponents
+      pageStyles = pageContent.gjsStyles || []
+    } else if (pageContent?.gjsHtml) {
+      // Legacy: convert HTML to components
+      editor.setComponents(pageContent.gjsHtml)
+      if (pageContent.gjsCss) editor.setStyle(pageContent.gjsCss)
+      pageComponents = editor
+        .getWrapper()!
+        .components()
+        .models.map((c: any) => c.toJSON())
+      pageStyles = safeGetStyles(editor)
+      editor.getWrapper()?.components().reset()
+      editor.setStyle([])
+    }
+
+    // Always rebuild with the CURRENT template from database
+    const layoutId = selectedLayoutIdRef.current
+    const layout = layoutId
+      ? layoutsRef.current.find((l) => l.id === layoutId)
+      : null
+
+    rebuildPageView(editor, layout || null, pageComponents, pageStyles)
+  }, [editorRef, data, layoutsData])
+
   // ── Loading / Error states ──
 
   if (isLoading || layoutsLoading) {
@@ -911,7 +950,16 @@ const CmsPageEditor = () => {
         activeDevice={activeDevice}
         isSaving={saveMutation.isPending}
         onSave={handleSave}
-        onPublish={() => publishMutation.mutate()}
+        onPublish={async () => {
+          if (editorRef) {
+            try {
+              await saveMutation.mutateAsync(buildSaveBody(editorRef))
+            } catch {
+              return // save error already shown via onError — don't publish stale content
+            }
+          }
+          publishMutation.mutate()
+        }}
         onUnpublish={() => unpublishMutation.mutate()}
         onDeviceChange={(d) => setActiveDevice(d as "Desktop" | "Tablet" | "Mobile")}
         onFigmaImport={handleFigmaImport}

@@ -67,6 +67,7 @@ const CountrySelect = ({ toggleState, regions }: CountrySelectProps) => {
       <Listbox
         as="span"
         onChange={handleChange}
+        // @ts-expect-error // TODO: fix upstream type — CountryOption.country may be undefined per @medusajs/types
         defaultValue={
           countryCode
             ? options?.find((o) => o?.country === countryCode)

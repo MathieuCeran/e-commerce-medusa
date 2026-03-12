@@ -6,7 +6,8 @@ const CmsLayout = model.define("cms_layout", {
   description: model.text().nullable(),
   html: model.text().default(""),
   css: model.text().default(""),
-  component_data: model.json().default([]),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  component_data: model.json().default([] as any),
   content_position: model.number().default(-1),
   is_default: model.boolean().default(false),
 })

@@ -62,7 +62,7 @@ export function registerNavigationBlocks(editor: Editor) {
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;">
           <div>
             <a href="/" style="font-size:22px;font-weight:700;color:#ffffff;text-decoration:none;display:block;margin-bottom:16px;">Boutique</a>
-            <p style="font-size:14px;color:#9ca3af;line-height:1.7;max-width:280px;">Votre boutique de confiance pour des produits de qualite. Livraison rapide partout en France.</p>
+            <p style="font-size:14px;color:#9ca3af;line-height:1.7;max-width:280px;">Votre boutique de confiance pour des produits de qualite.</p>
           </div>
           <div>
             <h4 style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#d1d5db;margin-bottom:16px;">Boutique</h4>
@@ -70,7 +70,6 @@ export function registerNavigationBlocks(editor: Editor) {
               <li><a href="/store" style="font-size:14px;color:#9ca3af;text-decoration:none;">Tous les produits</a></li>
               <li><a href="/store/nouveautes" style="font-size:14px;color:#9ca3af;text-decoration:none;">Nouveautes</a></li>
               <li><a href="/store/promotions" style="font-size:14px;color:#9ca3af;text-decoration:none;">Promotions</a></li>
-              <li><a href="/store/marques" style="font-size:14px;color:#9ca3af;text-decoration:none;">Marques</a></li>
             </ul>
           </div>
           <div>
@@ -79,7 +78,6 @@ export function registerNavigationBlocks(editor: Editor) {
               <li><a href="/about" style="font-size:14px;color:#9ca3af;text-decoration:none;">A propos</a></li>
               <li><a href="/contact" style="font-size:14px;color:#9ca3af;text-decoration:none;">Contact</a></li>
               <li><a href="/livraison" style="font-size:14px;color:#9ca3af;text-decoration:none;">Livraison</a></li>
-              <li><a href="/retours" style="font-size:14px;color:#9ca3af;text-decoration:none;">Retours</a></li>
             </ul>
           </div>
           <div>
@@ -87,17 +85,15 @@ export function registerNavigationBlocks(editor: Editor) {
             <div style="display:flex;flex-direction:column;gap:10px;">
               <a href="#" style="font-size:14px;color:#9ca3af;text-decoration:none;">Instagram</a>
               <a href="#" style="font-size:14px;color:#9ca3af;text-decoration:none;">Facebook</a>
-              <a href="#" style="font-size:14px;color:#9ca3af;text-decoration:none;">Pinterest</a>
               <a href="#" style="font-size:14px;color:#9ca3af;text-decoration:none;">TikTok</a>
             </div>
           </div>
         </div>
         <div style="border-top:1px solid #374151;padding-top:24px;display:flex;align-items:center;justify-content:space-between;">
-          <p style="font-size:13px;color:#6b7280;">&copy; 2024 Boutique. Tous droits reserves.</p>
+          <p style="font-size:13px;color:#6b7280;">&copy; 2026 Boutique. Tous droits reserves.</p>
           <div style="display:flex;gap:24px;">
             <a href="/cgv" style="font-size:13px;color:#6b7280;text-decoration:none;">CGV</a>
             <a href="/confidentialite" style="font-size:13px;color:#6b7280;text-decoration:none;">Confidentialite</a>
-            <a href="/mentions-legales" style="font-size:13px;color:#6b7280;text-decoration:none;">Mentions legales</a>
           </div>
         </div>
       </div>
@@ -116,58 +112,11 @@ export function registerNavigationBlocks(editor: Editor) {
           <a href="/confidentialite" style="font-size:13px;color:#6b7280;text-decoration:none;">Confidentialite</a>
           <a href="/contact" style="font-size:13px;color:#6b7280;text-decoration:none;">Contact</a>
         </nav>
-        <p style="font-size:13px;color:#9ca3af;">&copy; 2024 Boutique</p>
+        <p style="font-size:13px;color:#9ca3af;">&copy; 2026 Boutique</p>
       </div>
     </footer>`,
     media: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="16" x2="22" y2="16"/><rect x="2" y="16" width="20" height="5" rx="1"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="12" y1="12" x2="16" y2="12"/></svg>',
   })
 
-  // Component type: site-header
-  editor.DomComponents.addType("site-header", {
-    isComponent: (el) =>
-      el.getAttribute?.("data-component") === "site-header",
-    model: {
-      defaults: {
-        tagName: "header",
-        droppable: true,
-        traits: [
-          {
-            type: "select",
-            name: "data-variant",
-            label: "Variante",
-            options: [
-              { id: "simple", label: "Simple" },
-              { id: "ecommerce", label: "E-commerce" },
-              { id: "minimal", label: "Minimal" },
-            ],
-            default: "simple",
-          },
-        ],
-      },
-    },
-  })
-
-  // Component type: site-footer
-  editor.DomComponents.addType("site-footer", {
-    isComponent: (el) =>
-      el.getAttribute?.("data-component") === "site-footer",
-    model: {
-      defaults: {
-        tagName: "footer",
-        droppable: true,
-        traits: [
-          {
-            type: "select",
-            name: "data-variant",
-            label: "Variante",
-            options: [
-              { id: "full", label: "Complet" },
-              { id: "minimal", label: "Minimal" },
-            ],
-            default: "full",
-          },
-        ],
-      },
-    },
-  })
+  // addType calls REMOVED — moved to types/navigation.ts
 }

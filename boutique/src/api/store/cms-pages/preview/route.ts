@@ -22,14 +22,22 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   const segments = slug.split("/").filter(Boolean)
 
-  if (segments.length === 0 || segments.length > 2) {
+  if (segments.length > 2) {
     res.status(404).json({ message: "Page not found" })
     return
   }
 
   let page: any = null
 
-  if (segments.length === 1) {
+  if (segments.length === 0) {
+    // Homepage preview: slug = "/"
+    const [pages] = await cmsPageService.listAndCountCmsPages({
+      slug: "/",
+      parent_id: null,
+      preview_token: token,
+    })
+    page = pages[0]
+  } else if (segments.length === 1) {
     const [pages] = await cmsPageService.listAndCountCmsPages({
       slug: segments[0],
       parent_id: null,
@@ -65,7 +73,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     try {
       layout = await cmsPageService.retrieveCmsLayout(page.layout_id)
     } catch {
-      // Layout may have been deleted
+      // Layout not found — proceed without it
     }
   }
 
