@@ -2,6 +2,9 @@ import type { Editor } from "grapesjs"
 import { registerSectionBlocks } from "./sections"
 import { registerBasicBlocks } from "./basic"
 import { registerEcommerceBlocks } from "./ecommerce"
+import { registerNavigationBlocks } from "./navigation"
+import { registerMediaBlocks } from "./media"
+import { registerInteractiveBlocks } from "./interactive"
 
 const SEMANTIC_TAGS = [
   { id: "div", label: "div" },
@@ -56,6 +59,9 @@ function registerSemanticTagChanger(editor: Editor) {
 export function registerAllBlocks(editor: Editor) {
   registerSemanticTagChanger(editor)
   registerSectionBlocks(editor)
+  registerNavigationBlocks(editor)
   registerBasicBlocks(editor)
+  registerMediaBlocks(editor)
+  registerInteractiveBlocks(editor)
   registerEcommerceBlocks(editor)
 }

@@ -73,14 +73,6 @@ const CATEGORIES: CategoryDef[] = [
     blockCategory: "Media",
   },
   {
-    id: "forms",
-    label: "Forms",
-    group: "Elements",
-    icon: `<rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M7 10h10M7 14h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
-    color: "#34c759",
-    blockCategory: "Forms",
-  },
-  {
     id: "interactive",
     label: "Interactive",
     group: "Elements",
