@@ -1,8 +1,8 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getCmsPagePreview } from "@lib/data/cms-pages"
-import { mergeLayoutWithContent, HIDE_DEFAULT_NAV_FOOTER_CSS } from "@lib/data/cms-layout-merge"
-import { GjsRenderer } from "../[...slug]/gjs-renderer"
+import { getRegion } from "@lib/data/regions"
+import { CmsPageRenderer } from "@lib/cms/cms-page-renderer"
 
 type Props = {
   params: Promise<{ countryCode: string }>
@@ -36,13 +36,17 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 // Preview route for homepage (slug = "/")
 export default async function HomepagePreview({ params, searchParams }: Props) {
+  const { countryCode } = await params
   const { token } = await searchParams
 
   if (!token) {
     notFound()
   }
 
-  const result = await getCmsPagePreview("/", token)
+  const [result, region] = await Promise.all([
+    getCmsPagePreview("/", token),
+    getRegion(countryCode),
+  ])
 
   if (!result) {
     notFound()
@@ -59,23 +63,16 @@ export default async function HomepagePreview({ params, searchParams }: Props) {
     )
   }
 
-  let html = content?.gjsHtml || ""
-  let css = content?.gjsCss || ""
-  const hasLayout = !!layout
-
-  if (layout) {
-    const merged = mergeLayoutWithContent(layout, html, css)
-    html = merged.html
-    css = merged.css
-  }
+  const html = content?.gjsHtml || ""
+  const css = content?.gjsCss || ""
 
   return (
-    <div {...(hasLayout ? { "data-cms-full-layout": "true" } : {})}>
-      {hasLayout && <style dangerouslySetInnerHTML={{ __html: HIDE_DEFAULT_NAV_FOOTER_CSS }} />}
-      <div className="bg-yellow-400 text-black text-center py-2 px-4 text-sm font-semibold sticky top-0 z-50">
-        PREVIEW MODE — This page is not published yet
-      </div>
-      <GjsRenderer html={html} css={css} />
-    </div>
+    <CmsPageRenderer
+      html={html}
+      css={css}
+      layout={layout || null}
+      context={{ region: region!, countryCode }}
+      isPreview
+    />
   )
 }

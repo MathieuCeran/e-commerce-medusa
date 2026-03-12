@@ -9,10 +9,17 @@ import { registerAllComponents } from "./register-components"
 // Ensure components are registered
 registerAllComponents()
 
+type CmsLayout = {
+  id: string
+  html: string
+  css: string
+  content_position: number
+}
+
 type CmsPageRendererProps = {
   html: string
   css: string
-  layout?: { html: string; css: string } | null
+  layout?: CmsLayout | null
   context: RenderContext
   isPreview?: boolean
 }
