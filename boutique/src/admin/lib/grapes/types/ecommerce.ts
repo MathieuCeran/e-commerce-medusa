@@ -5,7 +5,9 @@ export function registerEcommerceTypes(editor: Editor) {
     isComponent: (el) => el.getAttribute?.("data-component") === "products-grid",
     model: {
       defaults: {
+        tagName: "section",
         name: "Products Grid",
+        droppable: false,
         attributes: { "data-component": "products-grid" },
         traits: [
           { type: "text", name: "data-collection", label: "Collection Handle" },

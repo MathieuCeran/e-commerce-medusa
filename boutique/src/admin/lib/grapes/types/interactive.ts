@@ -62,6 +62,7 @@ export function registerInteractiveTypes(editor: Editor) {
     isComponent: (el) => el.getAttribute?.("data-component") === "stats-counter",
     model: {
       defaults: {
+        tagName: "section",
         name: "Stats Counter",
         droppable: false,
         attributes: { "data-component": "stats-counter" },
@@ -75,7 +76,9 @@ export function registerInteractiveTypes(editor: Editor) {
     isComponent: (el) => el.getAttribute?.("data-component") === "testimonials-carousel",
     model: {
       defaults: {
+        tagName: "section",
         name: "Testimonials",
+        droppable: false,
         attributes: { "data-component": "testimonials-carousel" },
         traits: [
           { type: "checkbox", name: "data-autoplay", label: "Autoplay" },
@@ -91,6 +94,7 @@ export function registerInteractiveTypes(editor: Editor) {
     model: {
       defaults: {
         name: "Announcement Bar",
+        droppable: false,
         attributes: { "data-component": "announcement-bar" },
         traits: [
           { type: "checkbox", name: "data-dismissible", label: "Dismissible" },
